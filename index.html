@@ -3,106 +3,67 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>واجهة الشات</title>
+  <title>شات الحبايب</title>
   <style>
     body {
-      font-family: 'Tahoma', sans-serif;
+      font-family: Tahoma, sans-serif;
       background: #fff0ff;
       margin: 0;
-    }
-    header {
-      background: #a000c0;
-      color: white;
-      padding: 15px;
-      text-align: center;
-      position: relative;
-    }
-    #menu-btn {
-      position: absolute;
-      top: 10px;
-      left: 10px;
-      font-size: 24px;
-      background: none;
-      border: none;
-      color: white;
-      cursor: pointer;
-      z-index: 1100;
-    }
-    #sidebar {
-      position: fixed;
-      top: 50px;
-      left: -250px;
-      width: 250px;
-      height: calc(100% - 50px);
-      background: #a000c0;
-      color: white;
-      padding: 20px;
-      transition: left 0.3s ease;
-      z-index: 1000;
-      pointer-events: none;
-      opacity: 0;
-    }
-    #sidebar.open {
-      left: 0;
-      pointer-events: auto;
-      opacity: 1;
-    }
-    #sidebar a {
-      display: block;
-      color: white;
-      text-decoration: none;
-      margin: 10px 0;
-      font-size: 18px;
-      cursor: pointer;
-    }
-    #chat {
-      max-width: 600px;
-      margin: 20px auto;
-      background: white;
-      border-radius: 10px;
-      box-shadow: 0 0 10px #ccc;
-      overflow: hidden;
+      padding: 0;
       display: flex;
       flex-direction: column;
-      height: 400px;
+      height: 100vh;
     }
-    #messages {
+    header {
+      background-color: #a000c0;
+      color: white;
+      padding: 10px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    header h1 {
+      margin: 0;
+      font-size: 24px;
+    }
+    #controlPanelBtn {
+      background: white;
+      color: #a000c0;
+      border: none;
+      padding: 6px 14px;
+      font-weight: bold;
+      border-radius: 8px;
+      cursor: pointer;
+      display: none; /* يظهر فقط للمالك */
+    }
+    #chatBox {
       flex: 1;
-      overflow-y: auto;
       padding: 10px;
+      overflow-y: auto;
       background: #ffe6ff;
     }
-    .message {
-      margin: 5px 0;
-      background: #eeb7ff;
-      padding: 8px 12px;
-      border-radius: 10px;
-      position: relative;
-    }
-    .message strong {
-      margin-right: 5px;
-    }
-    .input-area {
+    #inputArea {
       display: flex;
       padding: 10px;
-      background: #f8d8ff;
-      border-top: 1px solid #ccc;
+      background: #f9d9ff;
+      border-top: 1px solid #a000c0;
     }
-    .input-area input {
+    #messageInput {
       flex: 1;
       padding: 10px;
-      border-radius: 20px;
-      border: 1px solid #ccc;
       font-size: 16px;
-      text-align: right;
+      border-radius: 8px;
+      border: 1px solid #a000c0;
+      outline: none;
     }
-    .input-area button {
-      margin-right: 10px;
-      padding: 10px 15px;
-      border: none;
+    #sendBtn {
       background: #a000c0;
       color: white;
-      border-radius: 20px;
+      border: none;
+      padding: 10px 20px;
+      margin-left: 10px;
+      border-radius: 8px;
+      font-size: 16px;
       cursor: pointer;
     }
   </style>
@@ -110,25 +71,20 @@
 <body>
 
 <header>
-  <button id="menu-btn">&#9776;</button>
-  <h1>غرفة الدردشة</h1>
+  <h1>شات الحبايب</h1>
+  <button id="controlPanelBtn">لوحة التحكم</button>
 </header>
 
-<div id="sidebar">
-  <a id="adminLink">لوحة التحكم</a>
-</div>
+<div id="chatBox">جارِ تحميل الرسائل...</div>
 
-<div id="chat">
-  <div id="messages"></div>
-  <div class="input-area">
-    <input type="text" id="messageInput" placeholder="اكتب رسالتك..." />
-    <button id="sendBtn">إرسال</button>
-  </div>
+<div id="inputArea">
+  <input type="text" id="messageInput" placeholder="اكتب رسالتك هنا..." autocomplete="off" />
+  <button id="sendBtn">إرسال</button>
 </div>
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";
-  import { getDatabase, ref, push, onChildAdded } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-database.js";
+  import { getDatabase, ref, push, onValue, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-database.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyB3i3f8iUTl_i6JjhdrfkHcyPIkpfg92-Y",
@@ -144,49 +100,61 @@
   const db = getDatabase(app);
   const messagesRef = ref(db, "messages");
 
-  const messagesDiv = document.getElementById("messages");
-  const input = document.getElementById("messageInput");
+  const username = localStorage.getItem('username');
+  const role = localStorage.getItem('role');
+
+  if (!username) {
+    alert("يجب تسجيل الدخول أولاً");
+    window.location.href = "login.html";
+  }
+
+  const chatBox = document.getElementById("chatBox");
+  const messageInput = document.getElementById("messageInput");
   const sendBtn = document.getElementById("sendBtn");
+  const controlPanelBtn = document.getElementById("controlPanelBtn");
 
-  // اسم المستخدم والدور مخزن محلياً أو مجهول افتراضياً
-  const username = localStorage.getItem("username") || "مجهول";
-  const role = localStorage.getItem("role") || "عضو";
+  // إظهار زر لوحة التحكم للمالك فقط
+  if (role === "المالك") {
+    controlPanelBtn.style.display = "inline-block";
+  }
 
-  sendBtn.addEventListener("click", () => {
-    const text = input.value.trim();
-    if (text === "") return;
+  controlPanelBtn.onclick = () => {
+    window.location.href = "admin.html";
+  };
 
+  // تحميل الرسائل وعرضها
+  onValue(messagesRef, (snapshot) => {
+    chatBox.innerHTML = "";
+    const data = snapshot.val();
+    if (!data) {
+      chatBox.textContent = "لا توجد رسائل حالياً.";
+      return;
+    }
+    for (const key in data) {
+      const msg = data[key];
+      const div = document.createElement("div");
+      const badge = msg.role === "المالك" ? "⭐ " : (msg.role === "مشرف" ? "🔧 " : "");
+      const time = new Date(msg.timestamp).toLocaleTimeString("ar-EG", { hour12: false });
+      div.textContent = `${badge}${msg.sender}: ${msg.text} (${time})`;
+      chatBox.appendChild(div);
+    }
+    chatBox.scrollTop = chatBox.scrollHeight;
+  });
+
+  sendBtn.onclick = () => {
+    const text = messageInput.value.trim();
+    if (!text) return;
     push(messagesRef, {
-      text,
       sender: username,
       role: role,
+      text: text,
       timestamp: Date.now()
     });
-    input.value = "";
-  });
+    messageInput.value = "";
+  };
 
-  onChildAdded(messagesRef, (data) => {
-    const msg = data.val();
-    const div = document.createElement("div");
-    div.className = "message";
-
-    let badge = "";
-    if (msg.role === "المالك") badge = "⭐";
-    else if (msg.role === "مشرف") badge = "🔧";
-
-    div.innerHTML = `<strong>${badge} ${msg.sender || "مجهول"}:</strong> ${msg.text}`;
-    messagesDiv.appendChild(div);
-    messagesDiv.scrollTop = messagesDiv.scrollHeight;
-  });
-
-  document.getElementById("menu-btn").addEventListener("click", () => {
-    const sidebar = document.getElementById("sidebar");
-    sidebar.classList.toggle("open");
-  });
-
-  // ربط زر لوحة التحكم لفتح الصفحة
-  document.getElementById("adminLink").addEventListener("click", () => {
-    window.location.href = "control.html";
+  messageInput.addEventListener("keydown", e => {
+    if (e.key === "Enter") sendBtn.click();
   });
 </script>
 

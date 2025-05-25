@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>شات الحبايب</title>
+<style>
+  body {
+    font-family: Tahoma, sans-serif;
+    background: #fff5fc;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+  }
+  header {
+    background: #a000c0;
+    color: white;
+    padding: 15px 20px;
+    text-align: right;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  #usernameDisplay {
+    font-weight: bold;
+    cursor: pointer;
+  }
+  #logoutBtn {
+    background: #ff80c0;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 10px;
+    cursor: pointer;
+    color: white;
+  }
+  #logoutBtn:hover {
+    background: #f268ab;
+  }
+  #chatMessages {
+    flex-grow: 1;
+    padding: 20px;
+    overflow-y: auto;
+    background: white;
+    border-top: 1px solid #ddd;
+    border-bottom: 1px solid #ddd;
+  }
+  .message {
+    margin-bottom: 15px;
+  }
+  .message strong {
+    color: #a000c0;
+    cursor: pointer;
+  }
+  #messageForm {
+    display: flex;
+    padding: 15px 20px;
+    background: #f9e6f5;
+    align-items: center;
+  }
+  #messageInput {
+    flex-grow: 1;
+    padding: 10px;
+    border-radius: 10px;
+    border: 1px solid #ccc;
+    font-size: 16px;
+  }
+  #sendBtn {
+    background: #a000c0;
+    border: none;
+    color: white;
+    padding: 10px 20px;
+    margin-left: 10px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 16px;
+  }
+  #sendBtn:hover {
+    background: #d965a6;
+  }
+  /* شريط جانبي للملف الشخصي */
+  #sidebarToggle {
+    font-size: 24px;
+    cursor: pointer;
+    user-select: none;
+    padding: 0 10px;
+  }
+  #sidebar {
+    position: fixed;
+    top: 60px;
+    right: 0;
+    width: 280px;
+    height: calc(100% - 60px);
+    background: #a000c0;
+    color: white;
+    padding: 20px;
+    box-sizing: border-box;
+    transform: translateX(100%);
+    transition: transform 0.3s ease;
+    border-radius: 10px 0 0 10px;
+    z-index: 1000;
+  }
+  #sidebar.active {
+    transform: translateX(0);
+  }
+  #sidebar h3 {
+    margin-top: 0;
+    margin-bottom: 15px;
+  }
+  #profilePicPreview {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    background: #ddd;
+    object-fit: cover;
+    display: block;
+    margin-bottom: 15px;
+    cursor: pointer;
+    border: 3px solid white;
+  }
+  #fileInput {
+    display: none;
+  }
+  #profileForm input[type="text"],
+  #profileForm input[type="password"] {
+    width: 100%;
+    padding: 8px;
+    margin-bottom: 15px;
+    border-radius: 8px;
+    border: none;
+  }
+  #profileForm button {
+    background: #ff80c0;
+    border: none;
+    padding: 10px;
+    width: 100%;
+    font-weight: bold;
+    border-radius: 8px;
+    cursor: pointer;
+    color: #a000c0;
+  }
+  #profileForm button:hover {
+    background: #f268ab;
+    color: white;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div style="display: flex; align-items:center; gap:10px;">
+    <span id="sidebarToggle" title="فتح القائمة">&#9776;</span>
+    <div>مرحباً، <span id="usernameDisplay"></span></div>
+  </div>
+  <button id="logoutBtn">خروج</button>
+</header>
+
+<div id="chatMessages"></div>
+
+<form id="messageForm">
+  <input type="text" id="messageInput" placeholder="اكتب رسالتك هنا..." autocomplete="off" />
+  <button type="submit" id="sendBtn">إرسال</button>
+</form>
+
+<!-- شريط جانبي للملف الشخصي -->
+<div id="sidebar">
+  <h3>تعديل الملف الشخصي</h3>
+  <img id="profilePicPreview" src="" alt="صورة الملف الشخصي" title="اضغط لتغيير الصورة" />
+  <input type="file" id="fileInput" accept="image/*" />
+  <form id="profileForm">
+    <input type="text" id="profileName" placeholder="الاسم الجديد" />
+    <input type="password" id="profilePassword" placeholder="كلمة المرور الجديدة" />
+    <button type="submit">تحديث</button>
+  </form>
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";
+  import { getAuth, signOut } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-auth.js";
+  import { getDatabase, ref, push, onChildAdded, remove } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-database.js";
+  import { getStorage, ref as sRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-storage.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyB3i3f8iUTl_i6JjhdrfkHcyPIkpfg92-Y",
+    authDomain: "mychat-cbc37.firebaseapp.com",
+    databaseURL: "https://mychat-cbc37-default-rtdb.firebaseio.com/",
+    projectId: "mychat-cbc37",
+    storageBucket: "mychat-cbc37.appspot.com",
+    messagingSenderId: "1234567890",
+    appId: "1:1234567890:web:abc123def456"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getDatabase(app);
+  const storage = getStorage(app);
+
+  const usernameDisplay = document.getElementById('usernameDisplay');
+  const logoutBtn = document.getElementById('logoutBtn');
+  const chatMessages = document.getElementById('chatMessages');
+  const messageForm = document.getElementById('messageForm');
+  const messageInput = document.getElementById('messageInput');
+  const sidebarToggle = document.getElementById('sidebarToggle');
+  const sidebar = document.getElementById('sidebar');
+  const profilePicPreview = document.getElementById('profilePicPreview');
+  const fileInput = document.getElementById('fileInput');
+  const profileForm = document.getElementById('profileForm');
+  const profileName = document.getElementById('profileName');
+  const profilePassword = document.getElementById('profilePassword');
+
+  // جلب اسم المستخدم من localStorage
+  let username = localStorage.getItem('username');
+  if (!username) {
+    alert("يرجى تسجيل الدخول أولاً");
+    window.location.href = 'index.html';
+  }
+  usernameDisplay.textContent = username;
+
+  // صورة الملف الشخصي من localStorage أو صورة افتراضية
+  const profilePicURL = localStorage.getItem('profilePicURL') || 'https://via.placeholder.com/100?text=User';
+  profilePicPreview.src = profilePicURL;
+
+  // فتح وإغلاق الشريط الجانبي
+  sidebarToggle.onclick = () => {
+    sidebar.classList.toggle('active');
+  };
+
+  // تحميل صورة جديدة
+  profilePicPreview.onclick = () => {
+    fileInput.click();
+  };
+
+  fileInput.onchange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    // رفع الصورة إلى Firebase Storage
+    const storageRef = sRef(storage, 'profilePics/' + username + '_' + Date.now());
+    try {
+      await uploadBytes(storageRef, file);
+      const downloadURL = await getDownloadURL(storageRef);
+      profilePicPreview.src = downloadURL;
+      localStorage.setItem('profilePicURL', downloadURL);
+      alert('تم تحديث صورة الملف الشخصي.');
+    } catch (error) {
+      alert('خطأ في رفع الصورة: ' + error.message);
+    }
+  };
+
+  // تحديث اسم المستخدم (في localStorage فقط هنا)
+  profileForm.onsubmit = (e) => {
+    e.preventDefault();
+    const newName = profileName.value.trim();
+
+    if (newName) {
+      username = newName;
+      localStorage.setItem('username', newName);
+      usernameDisplay.textContent = newName;
+      alert('تم تحديث الاسم.');
+      profileName.value = '';
+      sidebar.classList.remove('active');
+    }
+    // كلمة المرور هنا مجرد حقل، ليس له تأثير لأننا لا ندير Auth هنا
+    profilePassword.value = '';
+  };
+
+  // تسجيل الخروج
+  logoutBtn.onclick = () => {
+    localStorage.removeItem('username');
+    localStorage.removeItem('profilePicURL');
+    window.location.href = 'index.html';
+  };
+
+  // إضافة رسالة جديدة
+  messageForm.onsubmit = (e) => {
+    e.preventDefault();
+    const text = messageInput.value.trim();
+    if (!text) return;
+
+    // لو كانت الرسالة "/مسح" نحذف كل الرسائل من القاعدة
+    if (text === '/مسح') {
+      if (confirm('هل أنت متأكد من حذف جميع الرسائل؟')) {
+        const messagesRef = ref(db, 'messages');
+        remove(messagesRef);
+        chatMessages.innerHTML = '';
+        alert('تم حذف كل الرسائل.');
+      }
+      messageInput.value = '';
+      return;
+    }
+
+    const messagesRef = ref(db, 'messages');
+    push(messagesRef, {
+      username,
+      text,
+      timestamp: Date.now()
+    });
+    messageInput.value = '';
+  };
+
+  // استقبال الرسائل وعرضها
+  const messagesRef = ref(db, 'messages');
+  onChildAdded(messagesRef, (snapshot) => {
+    const data = snapshot.val();
+    if (!data) return;
+
+    const msgDiv = document.createElement('div');
+    msgDiv.classList.add('message');
+
+    // إذا الرسالة تحتوي منشن (@username) نخلي الاسم قابل للنقر
+    let msgContent = data.text;
+    // استبدال كلمات @username إلى span قابل للنقر
+    const mentionRegex = /@(\w+)/g;
+    msgContent = msgContent.replace(mentionRegex, (match, uname) => {
+      return `<strong class="mention" data-username="${uname}">@${uname}</strong>`;
+    });
+
+    msgDiv.innerHTML = `<strong class="username" data-username="${data.username}">${data.username}:</strong> ${msgContent}`;
+    chatMessages.appendChild(msgDiv);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+  });
+
+  // عند الضغط على اسم في الرسالة للتمنشن
+  chatMessages.addEventListener('click', e => {
+    if (e.target.classList.contains('mention')) {
+      const mentionUser = e.target.getAttribute('data-username');
+      messageInput.value = '@' + mentionUser + ' ';
+      messageInput.focus();
+    }
+  });
+
+  // عند الضغط على اسم المستخدم في الرأس يمكن تظهر لك رسالة أو خيارات (اختياري)
+  usernameDisplay.onclick = () => {
+    alert('هذا هو اسمك الحالي: ' + username);
+  };
+</script>
+
+</body>
+</html>ع

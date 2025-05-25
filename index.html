@@ -1,95 +1,157 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>شات الحبايب</title>
-  <style>
-    body {
-      font-family: Tahoma, sans-serif;
-      background: #fff0ff;
-      margin: 0;
-      padding: 0;
-      display: flex;
-      flex-direction: column;
-      height: 100vh;
-    }
-    header {
-      background-color: #a000c0;
-      color: white;
-      padding: 10px 20px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    header h1 {
-      margin: 0;
-      font-size: 24px;
-    }
-    #controlPanelBtn {
-      background: white;
-      color: #a000c0;
-      border: none;
-      padding: 6px 14px;
-      font-weight: bold;
-      border-radius: 8px;
-      cursor: pointer;
-      display: none; /* يظهر فقط للمالك */
-    }
-    #chatBox {
-      flex: 1;
-      padding: 10px;
-      overflow-y: auto;
-      background: #ffe6ff;
-    }
-    #inputArea {
-      display: flex;
-      padding: 10px;
-      background: #f9d9ff;
-      border-top: 1px solid #a000c0;
-    }
-    #messageInput {
-      flex: 1;
-      padding: 10px;
-      font-size: 16px;
-      border-radius: 8px;
-      border: 1px solid #a000c0;
-      outline: none;
-    }
-    #sendBtn {
-      background: #a000c0;
-      color: white;
-      border: none;
-      padding: 10px 20px;
-      margin-left: 10px;
-      border-radius: 8px;
-      font-size: 16px;
-      cursor: pointer;
-    }
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>تسجيل الدخول - شات الحبايب</title>
+<style>
+  body {
+    font-family: Tahoma, sans-serif;
+    background: #fff5fc;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+  }
+  .container {
+    background: white;
+    padding: 25px 30px;
+    border-radius: 15px;
+    box-shadow: 0 0 20px rgba(160, 0, 112, 0.3);
+    width: 350px;
+    text-align: center;
+  }
+  h2 {
+    color: #a000c0;
+    margin-bottom: 20px;
+  }
+  button {
+    width: 100%;
+    background: #a000c0;
+    color: white;
+    border: none;
+    padding: 12px;
+    border-radius: 10px;
+    font-size: 16px;
+    cursor: pointer;
+    margin-bottom: 10px;
+    transition: background 0.3s ease;
+  }
+  button:hover {
+    background: #d965a6;
+  }
+  .btn-secondary {
+    background: #ff80c0;
+  }
+  .btn-secondary:hover {
+    background: #f268ab;
+  }
+  /* النوافذ المنبثقة */
+  .modal {
+    display: none;
+    position: fixed;
+    z-index: 999;
+    left: 0; top: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.5);
+    justify-content: center;
+    align-items: center;
+  }
+  .modal.active {
+    display: flex;
+  }
+  .modal-content {
+    background: white;
+    padding: 20px 30px;
+    border-radius: 15px;
+    width: 300px;
+    box-sizing: border-box;
+    position: relative;
+  }
+  .modal-content h3 {
+    margin-top: 0;
+    color: #a000c0;
+  }
+  .modal-content input {
+    width: 100%;
+    padding: 10px;
+    margin: 10px 0 15px;
+    border-radius: 10px;
+    border: 1px solid #ccc;
+    font-size: 15px;
+    box-sizing: border-box;
+  }
+  .modal-content .close-btn {
+    position: absolute;
+    top: 10px; right: 10px;
+    background: #a000c0;
+    border: none;
+    color: white;
+    font-weight: bold;
+    width: 25px;
+    height: 25px;
+    border-radius: 50%;
+    cursor: pointer;
+  }
+  .error-msg {
+    color: red;
+    font-size: 14px;
+    min-height: 18px;
+  }
+</style>
 </head>
 <body>
 
-<header>
-  <h1>شات الحبايب</h1>
-  <button id="controlPanelBtn">لوحة التحكم</button>
-</header>
+<div class="container">
+  <h2>تسجيل الدخول - شات الحبايب</h2>
+  <button id="loginOpenBtn">دخول بحساب موجود</button>
+  <button id="registerOpenBtn" class="btn-secondary">تسجيل حساب جديد</button>
+  <button id="guestOpenBtn" class="btn-secondary">دخول كزائر</button>
+</div>
 
-<div id="chatBox">جارِ تحميل الرسائل...</div>
+<!-- نافذة تسجيل الدخول -->
+<div class="modal" id="loginModal">
+  <div class="modal-content">
+    <button class="close-btn" id="loginCloseBtn">&times;</button>
+    <h3>دخول بحساب موجود</h3>
+    <input type="email" id="loginEmail" placeholder="البريد الإلكتروني" autocomplete="off" />
+    <input type="password" id="loginPassword" placeholder="كلمة المرور" />
+    <button id="loginBtn">دخول</button>
+    <div class="error-msg" id="loginError"></div>
+  </div>
+</div>
 
-<div id="inputArea">
-  <input type="text" id="messageInput" placeholder="اكتب رسالتك هنا..." autocomplete="off" />
-  <button id="sendBtn">إرسال</button>
+<!-- نافذة التسجيل -->
+<div class="modal" id="registerModal">
+  <div class="modal-content">
+    <button class="close-btn" id="registerCloseBtn">&times;</button>
+    <h3>تسجيل حساب جديد</h3>
+    <input type="text" id="registerDisplayName" placeholder="الاسم الكامل" autocomplete="off" />
+    <input type="email" id="registerEmail" placeholder="البريد الإلكتروني" autocomplete="off" />
+    <input type="password" id="registerPassword" placeholder="كلمة المرور" />
+    <button id="registerBtn">تسجيل</button>
+    <div class="error-msg" id="registerError"></div>
+  </div>
+</div>
+
+<!-- نافذة دخول الزائر -->
+<div class="modal" id="guestModal">
+  <div class="modal-content">
+    <button class="close-btn" id="guestCloseBtn">&times;</button>
+    <h3>دخول كزائر</h3>
+    <input type="text" id="guestName" placeholder="اكتب اسم الزائر" autocomplete="off" />
+    <button id="guestBtn">دخول</button>
+    <div class="error-msg" id="guestError"></div>
+  </div>
 </div>
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";
-  import { getDatabase, ref, push, onValue, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-database.js";
+  import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signInAnonymously, updateProfile } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-auth.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyB3i3f8iUTl_i6JjhdrfkHcyPIkpfg92-Y",
     authDomain: "mychat-cbc37.firebaseapp.com",
-    databaseURL: "https://mychat-cbc37-default-rtdb.firebaseio.com/",
     projectId: "mychat-cbc37",
     storageBucket: "mychat-cbc37.appspot.com",
     messagingSenderId: "1234567890",
@@ -97,65 +159,97 @@
   };
 
   const app = initializeApp(firebaseConfig);
-  const db = getDatabase(app);
-  const messagesRef = ref(db, "messages");
+  const auth = getAuth(app);
 
-  const username = localStorage.getItem('username');
-  const role = localStorage.getItem('role');
+  // فتح وغلق النوافذ المنبثقة
+  const loginModal = document.getElementById('loginModal');
+  const registerModal = document.getElementById('registerModal');
+  const guestModal = document.getElementById('guestModal');
 
-  if (!username) {
-    alert("يجب تسجيل الدخول أولاً");
-    window.location.href = "login.html";
+  document.getElementById('loginOpenBtn').onclick = () => { loginModal.classList.add('active'); };
+  document.getElementById('registerOpenBtn').onclick = () => { registerModal.classList.add('active'); };
+  document.getElementById('guestOpenBtn').onclick = () => { guestModal.classList.add('active'); };
+
+  document.getElementById('loginCloseBtn').onclick = () => { loginModal.classList.remove('active'); clearErrors(); };
+  document.getElementById('registerCloseBtn').onclick = () => { registerModal.classList.remove('active'); clearErrors(); };
+  document.getElementById('guestCloseBtn').onclick = () => { guestModal.classList.remove('active'); clearErrors(); };
+
+  // مسح رسائل الخطأ
+  function clearErrors() {
+    document.getElementById('loginError').textContent = "";
+    document.getElementById('registerError').textContent = "";
+    document.getElementById('guestError').textContent = "";
   }
 
-  const chatBox = document.getElementById("chatBox");
-  const messageInput = document.getElementById("messageInput");
-  const sendBtn = document.getElementById("sendBtn");
-  const controlPanelBtn = document.getElementById("controlPanelBtn");
+  // تسجيل دخول بحساب موجود
+  document.getElementById('loginBtn').onclick = () => {
+    clearErrors();
+    const email = document.getElementById('loginEmail').value.trim();
+    const password = document.getElementById('loginPassword').value.trim();
 
-  // إظهار زر لوحة التحكم للمالك فقط
-  if (role === "المالك") {
-    controlPanelBtn.style.display = "inline-block";
-  }
-
-  controlPanelBtn.onclick = () => {
-    window.location.href = "admin.html";
-  };
-
-  // تحميل الرسائل وعرضها
-  onValue(messagesRef, (snapshot) => {
-    chatBox.innerHTML = "";
-    const data = snapshot.val();
-    if (!data) {
-      chatBox.textContent = "لا توجد رسائل حالياً.";
+    if (!email || !password) {
+      document.getElementById('loginError').textContent = "يرجى تعبئة جميع الحقول.";
       return;
     }
-    for (const key in data) {
-      const msg = data[key];
-      const div = document.createElement("div");
-      const badge = msg.role === "المالك" ? "⭐ " : (msg.role === "مشرف" ? "🔧 " : "");
-      const time = new Date(msg.timestamp).toLocaleTimeString("ar-EG", { hour12: false });
-      div.textContent = `${badge}${msg.sender}: ${msg.text} (${time})`;
-      chatBox.appendChild(div);
-    }
-    chatBox.scrollTop = chatBox.scrollHeight;
-  });
 
-  sendBtn.onclick = () => {
-    const text = messageInput.value.trim();
-    if (!text) return;
-    push(messagesRef, {
-      sender: username,
-      role: role,
-      text: text,
-      timestamp: Date.now()
-    });
-    messageInput.value = "";
+    signInWithEmailAndPassword(auth, email, password)
+      .then(userCredential => {
+        localStorage.setItem('userId', userCredential.user.uid);
+        localStorage.setItem('username', userCredential.user.displayName || email);
+        window.location.href = 'chat.html';
+      })
+      .catch(error => {
+        document.getElementById('loginError').textContent = error.message;
+      });
   };
 
-  messageInput.addEventListener("keydown", e => {
-    if (e.key === "Enter") sendBtn.click();
-  });
+  // تسجيل حساب جديد
+  document.getElementById('registerBtn').onclick = () => {
+    clearErrors();
+    const displayName = document.getElementById('registerDisplayName').value.trim();
+    const email = document.getElementById('registerEmail').value.trim();
+    const password = document.getElementById('registerPassword').value.trim();
+
+    if (!displayName || !email || !password) {
+      document.getElementById('registerError').textContent = "يرجى تعبئة جميع الحقول.";
+      return;
+    }
+    if (password.length < 6) {
+      document.getElementById('registerError').textContent = "كلمة المرور يجب أن تكون 6 أحرف على الأقل.";
+      return;
+    }
+
+    createUserWithEmailAndPassword(auth, email, password)
+      .then(userCredential => {
+        return updateProfile(userCredential.user, { displayName: displayName });
+      })
+      .then(() => {
+        localStorage.setItem('username', displayName);
+        window.location.href = 'chat.html';
+      })
+      .catch(error => {
+        document.getElementById('registerError').textContent = error.message;
+      });
+  };
+
+  // دخول كزائر مع اسم يكتبه المستخدم
+  document.getElementById('guestBtn').onclick = () => {
+    clearErrors();
+    const guestName = document.getElementById('guestName').value.trim();
+    if (!guestName) {
+      document.getElementById('guestError').textContent = "يرجى إدخال اسم الزائر.";
+      return;
+    }
+
+    signInAnonymously(auth)
+      .then(() => {
+        localStorage.setItem('username', guestName);
+        window.location.href = 'chat.html';
+      })
+      .catch(error => {
+        document.getElementById('guestError').textContent = error.message;
+      });
+  };
 </script>
 
 </body>

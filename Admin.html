@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>لوحة التحكم - شات بناتي</title>
+  <title>لوحة التحكم - شات الحبايب</title>
   <style>
     body {
       font-family: 'Tahoma', sans-serif;
@@ -76,7 +76,7 @@
 </head>
 <body>
 
-<h1>لوحة التحكم - شات بناتي</h1>
+<h1>لوحة التحكم - شات الحبايب</h1>
 
 <button class="refreshBtn" id="refreshBtn">تحديث الرسائل</button>
 
@@ -103,7 +103,6 @@
   const messagesList = document.getElementById("messagesList");
   const refreshBtn = document.getElementById("refreshBtn");
 
-  // دالة لتحويل الطابع الزمني إلى وقت قابل للقراءة
   function formatTimestamp(ts) {
     const date = new Date(ts);
     return date.toLocaleString("ar-EG", { hour12: false });
@@ -135,7 +134,7 @@
         div.querySelector(".deleteBtn").onclick = () => {
           if (confirm("هل أنت متأكد من حذف هذه الرسالة؟")) {
             remove(ref(db, "messages/" + key)).then(() => {
-              loadMessages(); // حدث القائمة بعد الحذف
+              loadMessages();
             });
           }
         };
@@ -152,9 +151,8 @@
     loadMessages();
   };
 
-  // تحميل الرسائل عند فتح الصفحة
   loadMessages();
 </script>
 
 </body>
-</html>
+  </html>

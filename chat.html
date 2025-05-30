@@ -1,0 +1,2319 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>شات صدى الكلام، دردشة صدى الكلام</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        /* Base styles for all screen sizes */
+        body {
+            font-family: 'Cairo', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh; /* Make body take full viewport height */
+            font-size: 17px; /* Increased base font size */
+        }
+
+        /* Entire chat application wrapper */
+        .app-wrapper {
+            flex-grow: 1; /* Allow it to take available height */
+            display: flex;
+            flex-direction: column;
+            width: 95%; /* Use percentage for flexibility */
+            max-width: 1000px; /* Increased max-width for wider feel */
+            margin: 25px auto; /* Increased margin to center the whole app */
+            background-color: #fff;
+            border-radius: 10px; /* Slightly larger border-radius */
+            box-shadow: 0 0 20px rgba(0,0,0,0.1); /* Slightly larger shadow */
+            overflow: hidden; /* Clip any overflowing content */
+            position: relative; /* Needed for padding to clear fixed top-navbar and bottom-input */
+            padding-top: 110px; /* Adjusted padding based on new top-navbar height */
+            padding-bottom: 80px; /* Adjusted padding based on new chat-input-area height */
+            min-height: calc(100vh - 50px); /* Adjusted to consider body margin (25px top + 25px bottom) */
+        }
+
+        .top-navbar {
+            background-color: #333;
+            color: white;
+            padding: 12px 10px; /* Increased padding */
+            display: flex;
+            justify-content: center; /* Center the buttons */
+            align-items: center;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.15); /* Slightly larger shadow */
+            flex-wrap: wrap; /* Allow wrapping on smaller screens */
+            gap: 5px; /* Reduced gap for closer buttons */
+
+            position: fixed;
+            top: 0;
+            width: 95%; /* Match app-wrapper width */
+            max-width: 1000px; /* Match app-wrapper max-width */
+            z-index: 100;
+            left: 50%;
+            transform: translateX(-50%);
+            border-bottom-left-radius: 10px; /* Match app-wrapper radius */
+            border-bottom-right-radius: 10px;
+        }
+
+        .navbar-buttons {
+            display: flex;
+            flex-wrap: wrap; /* Ensure wrapping on smaller screens */
+            gap: 5px; /* Reduced gap */
+            justify-content: center; /* Center buttons within the container */
+            width: 100%;
+        }
+
+        .navbar-button {
+            color: white;
+            border: none;
+            padding: 7px 12px; /* Increased padding */
+            cursor: pointer;
+            font-size: 0.85em; /* Slightly larger font size */
+            font-weight: bold;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border-radius: 12px; /* Slightly larger border-radius */
+            min-width: 65px; /* Increased min-width */
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.25); /* Slightly larger shadow */
+            white-space: nowrap;
+        }
+
+        .navbar-button svg {
+            fill: white;
+            margin-bottom: 3px; /* Increased margin */
+            width: 22px; /* Slightly larger icons */
+            height: 22px; /* Slightly larger icons */
+        }
+
+        .navbar-button:hover {
+            transform: translateY(-2px); /* Increased hover effect */
+            box-shadow: 0 4px 8px rgba(0,0,0,0.35); /* Larger shadow on hover */
+        }
+
+        .navbar-button:active {
+            transform: translateY(1px);
+            box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+        }
+
+        .navbar-button.green-gradient {
+            background: linear-gradient(to right, #4CAF50, #8BC34A);
+        }
+
+        .navbar-button.purple-gradient {
+            background: linear-gradient(to right, #9C27B0, #E040FB);
+        }
+
+        .navbar-button.orange-gradient {
+            background: linear-gradient(to right, #FF9800, #FFC107);
+        }
+
+        .navbar-button.blue-gradient {
+            background: linear-gradient(to right, #2196F3, #00BCD4);
+        }
+
+        /* Chat messages area */
+        .chat-messages {
+            flex-grow: 1;
+            padding: 20px 25px; /* Increased padding */
+            overflow-y: auto;
+            background-color: #f8f9fa;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            min-height: 200px; /* Ensure a minimum height */
+        }
+
+        /* تنسيق الرسالة بشكل عام (جميع الرسائل على اليمين) */
+        .message {
+            display: flex;
+            flex-direction: column; /* الأفاتار/الاسم فوق الرسالة */
+            align-items: flex-end; /* محاذاة كل رسالة لليمين */
+            margin-bottom: 12px; /* Increased margin between messages */
+            max-width: 75%; /* Slightly increased max-width */
+            word-wrap: break-word;
+            position: relative;
+            margin-left: auto; /* تدفع الرسالة لليمين */
+            margin-right: 0; /* لا يوجد هامش على اليمين */
+        }
+
+        /* حاوية الأفاتار والاسم (الصف الأول من الرسالة) */
+        .message-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 6px; /* Increased space */
+        }
+
+        /* الصورة الشخصية داخل فقاعة الرسالة */
+        .message-avatar {
+            width: 40px; /* Slightly larger avatar */
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin-right: 10px; /* Increased margin */
+            flex-shrink: 0;
+            border: 1px solid #ddd;
+        }
+
+        /* اسم المرسل */
+        .message-sender {
+            font-size: 0.95em; /* Slightly larger font */
+            color: #555;
+            font-weight: bold;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: calc(100% - 50px); /* Adjusted for larger avatar */
+        }
+
+        /* فقاعة نص الرسالة */
+        .message-content {
+            background-color: #E0F7FA;
+            color: #333;
+            padding: 12px 18px; /* Increased padding */
+            border-radius: 20px; /* Slightly larger border-radius */
+            font-size: 1em; /* Adjusted font size */
+            line-height: 1.5; /* Increased line height for readability */
+            box-shadow: 0 2px 4px rgba(0,0,0,0.15); /* Slightly larger shadow */
+        }
+        /* تعديل الحواف لتكون أكثر تميزاً إذا رغبت، مثلاً زاوية حادة في أسفل اليمين فقط: */
+        .message-content {
+            border-top-left-radius: 20px;
+            border-top-right-radius: 6px; /* حادة في الأعلى يمين */
+            border-bottom-left-radius: 20px;
+            border-bottom-right-radius: 20px; /* حادة في الأسفل يمين */
+        }
+
+
+        .message-text {
+            margin: 0;
+        }
+
+        .message-time {
+            font-size: 0.75em; /* Slightly larger font */
+            color: #888;
+            margin-top: 6px; /* Increased margin */
+            display: block;
+            text-align: left;
+            width: 100%;
+        }
+
+        /* رسائل النظام (لا تزال في المنتصف بدون أفاتار/اسم مرسل) */
+        .message.system {
+            display: block; /* إلغاء flexbox لها */
+            background: linear-gradient(to right, #D1ECF1, #E8F7F9);
+            color: #0c5460;
+            text-align: center;
+            margin-left: auto;
+            margin-right: auto;
+            max-width: 90%;
+            font-weight: bold;
+            border-radius: 22px; /* Slightly larger radius */
+            padding: 10px 18px; /* Increased padding */
+            box-shadow: none;
+            border: 1px solid rgba(17, 105, 122, 0.2);
+            font-size: 0.95em; /* Larger font */
+        }
+        .message.system .message-header,
+        .message.system .message-avatar,
+        .message.system .message-sender,
+        .message.system .message-content {
+            display: none; /* إخفاء هذه العناصر لرسائل النظام */
+        }
+        .message.system .message-text {
+            display: block; /* عرض نص الرسالة لرسائل النظام */
+            margin: 0;
+            font-weight: bold;
+        }
+        .message.system .message-time {
+            text-align: center;
+            color: #0c5460;
+            margin-top: 4px; /* Increased margin */
+            display: block;
+        }
+
+        /* تصميم خاص لرسالة "الانضمام" */
+        .message.joined {
+            background-color: #D4EDDA;
+            color: #155724;
+            text-align: center;
+            margin-left: auto;
+            margin-right: auto;
+            max-width: 75%; /* Slightly increased max-width */
+            font-weight: normal;
+            border-radius: 18px; /* Slightly larger radius */
+            padding: 10px 15px; /* Increased padding */
+            font-size: 0.9em; /* Larger font */
+            box-shadow: none;
+        }
+        .message.joined .message-time {
+            color: #155724;
+        }
+        .message.joined .message-header,
+        .message.joined .message-avatar,
+        .message.joined .message-sender,
+        .message.joined .message-content {
+            display: none; /* إخفاء هذه العناصر لرسائل الانضمام */
+        }
+        .message.joined .message-text {
+            display: block;
+            margin: 0;
+        }
+
+        .message .mention {
+            color: #673AB7;
+            font-weight: bold;
+            background-color: rgba(103, 58, 183, 0.1);
+            padding: 3px 5px; /* Increased padding */
+            border-radius: 4px; /* Slightly larger radius */
+        }
+
+        /* Chat input area - NOW FIXED AT BOTTOM */
+        .chat-input-area {
+            background-color: #fff;
+            padding: 12px 18px; /* Increased padding */
+            border-top: 1px solid #ddd;
+            display: flex;
+            align-items: center;
+            flex-shrink: 0;
+
+            /* Fixed positioning */
+            position: fixed;
+            bottom: 0;
+            width: 95%; /* Match app-wrapper width */
+            max-width: 1000px; /* Match app-wrapper max-width */
+            z-index: 100;
+            left: 50%;
+            transform: translateX(-50%);
+            border-top-left-radius: 10px; /* Give it some roundness to match app-wrapper */
+            border-top-right-radius: 10px;
+            box-shadow: 0 -3px 6px rgba(0,0,0,0.15); /* Slightly larger shadow */
+        }
+
+        .chat-input {
+            flex-grow: 1;
+            padding: 12px 15px; /* Increased padding */
+            border: 1px solid #ccc;
+            border-radius: 25px; /* Slightly larger radius */
+            margin-left: 12px; /* Increased margin */
+            font-size: 1em; /* Adjusted font size */
+            outline: none;
+            transition: border-color 0.3s ease;
+        }
+
+        .chat-input:focus {
+            border-color: #007bff;
+        }
+
+        .send-button {
+            background-color: #28a745;
+            color: white;
+            border: none;
+            padding: 12px 22px; /* Increased padding */
+            border-radius: 25px; /* Slightly larger radius */
+            cursor: pointer;
+            font-size: 1em; /* Adjusted font size */
+            transition: background-color 0.3s ease;
+        }
+
+        .send-button:hover {
+            background-color: #218838;
+        }
+
+        /* --- Media Queries for Responsive Design --- */
+
+        /* Tablets and smaller desktops */
+        @media (max-width: 768px) {
+            body {
+                font-size: 16px; /* Slightly smaller for tablets */
+            }
+            .app-wrapper {
+                margin: 15px auto;
+                border-radius: 9px;
+                box-shadow: 0 0 15px rgba(0,0,0,0.07);
+                width: 97%;
+                padding-top: 95px; /* Adjusted padding for fixed navbar */
+                padding-bottom: 70px; /* Adjust padding for fixed input */
+                min-height: calc(100vh - 30px); /* Adjusted to consider body margin */
+            }
+            .top-navbar {
+                padding: 10px 8px;
+                max-width: 97%;
+                gap: 5px;
+            }
+
+            .navbar-button {
+                font-size: 0.8em;
+                padding: 6px 10px;
+                min-width: 60px;
+                border-radius: 10px;
+            }
+
+            .navbar-button svg {
+                width: 20px;
+                height: 20px;
+            }
+
+            .chat-messages {
+                padding: 18px 20px;
+            }
+
+            .message {
+                max-width: 85%;
+                font-size: 0.95em;
+                margin-bottom: 10px;
+            }
+
+            .message-avatar {
+                width: 38px;
+                height: 38px;
+            }
+
+            .message-sender {
+                font-size: 0.9em;
+            }
+
+            .message-content {
+                padding: 10px 15px;
+                border-radius: 18px;
+            }
+
+            .message-time {
+                font-size: 0.7em;
+                margin-top: 5px;
+            }
+
+            .chat-input-area {
+                padding: 10px 15px;
+                max-width: 97%;
+            }
+
+            .chat-input {
+                padding: 10px 12px;
+                font-size: 0.95em;
+            }
+
+            .send-button {
+                padding: 10px 18px;
+                font-size: 0.95em;
+            }
+
+            .users-sidebar.open, .profile-sidebar.open, .private-chat-modal .modal-content {
+                width: 65%;
+            }
+
+            .edit-profile-modal .modal-content {
+                width: 90%;
+                max-width: 450px;
+            }
+        }
+
+        /* Mobile phones */
+        @media (max-width: 480px) {
+            body {
+                font-size: 15px;
+            }
+            .app-wrapper {
+                margin: 0;
+                border-radius: 0;
+                box-shadow: none;
+                width: 100%;
+                min-height: 100vh;
+                padding-top: 85px; /* Adjusted padding for fixed navbar on mobile */
+                padding-bottom: 65px; /* Adjusted padding for fixed input on mobile */
+            }
+            .top-navbar {
+                padding: 8px 5px;
+                gap: 3px;
+                max-width: 100%;
+                border-bottom-left-radius: 0;
+                border-bottom-right-radius: 0;
+            }
+            .navbar-buttons {
+                justify-content: space-between;
+            }
+            .navbar-button {
+                font-size: 0.7em;
+                padding: 5px 8px;
+                min-width: 50px;
+                border-radius: 9px;
+            }
+            .navbar-button svg {
+                width: 18px;
+                height: 18px;
+            }
+
+            .chat-messages {
+                padding: 15px 15px;
+            }
+
+            .message {
+                font-size: 0.9em;
+                margin-bottom: 8px;
+                max-width: 90%;
+            }
+
+            .message-avatar {
+                width: 35px;
+                height: 35px;
+                margin-right: 8px;
+            }
+
+            .message-sender {
+                font-size: 0.85em;
+            }
+
+            .message-content {
+                padding: 8px 12px;
+                border-radius: 16px;
+            }
+
+            .message-time {
+                font-size: 0.65em;
+                margin-top: 4px;
+            }
+
+            .chat-input-area {
+                padding: 8px 10px;
+                max-width: 100%;
+            }
+
+            .chat-input {
+                padding: 8px 10px;
+                font-size: 0.9em;
+                margin-left: 8px;
+            }
+
+            .send-button {
+                padding: 8px 12px;
+                font-size: 0.9em;
+            }
+
+            .users-sidebar.open, .profile-sidebar.open, .private-chat-modal .modal-content {
+                width: 90%;
+            }
+            .users-sidebar h2, .profile-sidebar h2, .private-chat-modal h2 {
+                font-size: 24px;
+            }
+            #onlineUsersList li {
+                font-size: 0.95em;
+                padding: 10px 0;
+            }
+            #onlineUsersList li .user-avatar {
+                width: 38px;
+                height: 38px;
+            }
+
+            .edit-profile-modal .modal-content {
+                width: 98%;
+                max-width: 350px;
+                padding: 20px;
+            }
+        }
+
+        /* Styles for Modals (Keep this for the sounds modal) */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.6);
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: auto;
+            padding: 30px; /* Increased padding */
+            border: 1px solid #888;
+            border-radius: 12px; /* Slightly larger border-radius */
+            box-shadow: 0 5px 15px rgba(0,0,0,0.25); /* Larger shadow */
+            width: 90%;
+            max-width: 500px; /* Increased max-width */
+            position: relative;
+            text-align: center;
+        }
+
+        .close-button {
+            color: #aaa;
+            position: absolute;
+            top: 15px; /* Adjusted position */
+            right: 20px; /* Adjusted position */
+            font-size: 32px; /* Larger close button */
+            font-weight: bold;
+            cursor: pointer;
+            transition: color 0.3s ease;
+        }
+
+        .close-button:hover,
+        .close-button:focus {
+            color: #333;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .modal-content h2 {
+            margin-top: 0;
+            color: #333;
+            font-size: 1.6em; /* Larger font size */
+            margin-bottom: 25px; /* Increased margin */
+        }
+
+        /* Styles for Username Modal */
+        #usernameModal .modal-content {
+            padding: 35px; /* Increased padding */
+        }
+
+        #usernameModal h2 {
+            margin-bottom: 30px; /* Increased margin */
+            font-size: 2em; /* Larger font size */
+            color: #007bff;
+        }
+
+        #usernameInput {
+            width: calc(100% - 24px); /* Adjusted width */
+            padding: 15px; /* Increased padding */
+            margin-bottom: 25px; /* Increased margin */
+            border: 1px solid #ddd;
+            border-radius: 10px; /* Slightly larger radius */
+            font-size: 1.2em; /* Larger font size */
+            text-align: center;
+        }
+
+        #saveUsernameBtn {
+            background-color: #28a745;
+            color: white;
+            border: none;
+            padding: 15px 30px; /* Increased padding */
+            border-radius: 30px; /* Larger radius */
+            cursor: pointer;
+            font-size: 1.2em; /* Larger font size */
+            font-weight: bold;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+        }
+
+        #saveUsernameBtn:hover {
+            background-color: #218838;
+            transform: translateY(-3px); /* Increased hover effect */
+        }
+
+        /* Styles for Users Sidebar */
+        .users-sidebar {
+            height: 100%;
+            width: 0;
+            position: fixed;
+            z-index: 1001;
+            top: 0;
+            right: 0;
+            background-color: #fefefe;
+            overflow-x: hidden;
+            transition: 0.5s;
+            padding-top: 70px; /* Adjusted padding */
+            box-shadow: -3px 0 12px rgba(0,0,0,0.25); /* Larger shadow */
+            border-left: 1px solid #eee;
+            text-align: right;
+        }
+
+        .users-sidebar.open {
+            width: 300px; /* Wider sidebar */
+        }
+
+        .users-sidebar .close-button {
+            position: absolute;
+            top: 15px; /* Adjusted position */
+            left: 20px; /* Adjusted position */
+            right: auto;
+            font-size: 38px; /* Larger close button */
+            margin-right: 0;
+            color: #777;
+        }
+
+        .users-sidebar h2 {
+            padding: 10px 10px 10px 35px; /* Adjusted padding */
+            text-decoration: none;
+            font-size: 28px; /* Larger font size */
+            color: #333;
+            display: block;
+            margin-bottom: 25px; /* Increased margin */
+            text-align: right;
+            padding-right: 25px; /* Increased padding */
+        }
+
+        #onlineUsersList {
+            list-style-type: none;
+            padding: 0;
+            max-height: calc(100vh - 180px); /* Adjusted height */
+            overflow-y: auto;
+            text-align: right;
+            padding-right: 25px; /* Increased padding */
+        }
+
+        /* New styling for user list items */
+        #onlineUsersList li {
+            padding: 10px 18px; /* Increased padding */
+            border-bottom: 1px solid #eee;
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            color: #333;
+            font-size: 1.05em; /* Slightly larger font */
+            position: relative;
+        }
+
+        #onlineUsersList li:last-child {
+            border-bottom: none;
+        }
+
+        #onlineUsersList li .user-avatar {
+            width: 45px; /* Larger avatar */
+            height: 45px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin-left: 12px; /* Increased margin */
+            border: 2px solid #ccc;
+            flex-shrink: 0;
+        }
+
+        #onlineUsersList li .user-details {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+        }
+
+        #onlineUsersList li .user-name {
+            font-weight: bold;
+            color: #444;
+            font-size: 1.1em; /* Larger font */
+            margin-bottom: 3px; /* Increased margin */
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: flex;
+            align-items: center;
+        }
+
+        #onlineUsersList li .premium-badge {
+            background: linear-gradient(to right, #FFD700, #FFA000);
+            color: white;
+            font-size: 0.8em; /* Slightly larger font */
+            padding: 3px 7px; /* Increased padding */
+            border-radius: 9px; /* Slightly larger radius */
+            margin-right: 6px; /* Increased margin */
+            font-weight: normal;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            white-space: nowrap;
+        }
+        #onlineUsersList li .premium-badge svg {
+            width: 14px; /* Larger icon */
+            height: 14px;
+            fill: white;
+            margin-left: 4px; /* Increased margin */
+        }
+
+        #onlineUsersList li .user-status {
+            font-size: 0.9em; /* Slightly larger font */
+            color: #777;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* Remove the status dot if using online/offline text */
+        #onlineUsersList li .status-dot {
+            display: none;
+        }
+
+        .mentionable-user {
+            cursor: pointer;
+            transition: color 0.2s ease;
+            flex-grow: 1;
+            text-align: right;
+        }
+
+        .mentionable-user:hover {
+            color: #007bff;
+            text-decoration: underline;
+        }
+
+        /* Styles for Sounds Modal */
+        .sound-option {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 18px; /* Increased margin */
+            padding: 12px; /* Increased padding */
+            border: 1px solid #eee;
+            border-radius: 6px; /* Slightly larger radius */
+            background-color: #f9f9f9;
+        }
+
+        .sound-option label {
+            font-weight: bold;
+            color: #555;
+            flex-grow: 1;
+            text-align: right;
+            margin-right: 12px; /* Increased margin */
+            font-size: 1.05em; /* Slightly larger font */
+        }
+
+        .sound-option input[type="range"] {
+            width: 75%; /* Slightly wider slider */
+            -webkit-appearance: none;
+            height: 10px; /* Thicker slider */
+            background: #d3d3d3;
+            outline: none;
+            opacity: 0.8; /* Slightly less opaque */
+            transition: opacity .2s;
+            border-radius: 6px; /* Match container radius */
+            direction: ltr;
+        }
+
+        .sound-option input[type="range"]:hover {
+            opacity: 1;
+        }
+
+        .sound-option input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 22px; /* Larger thumb */
+            height: 22px;
+            background: #007bff;
+            cursor: pointer;
+            border-radius: 50%;
+        }
+
+        .sound-option input[type="range"]::-moz-range-thumb {
+            width: 22px;
+            height: 22px;
+            background: #007bff;
+            cursor: pointer;
+            border-radius: 50%;
+        }
+
+        /* Toggle Switch for Mute/Unmute */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 45px; /* Wider switch */
+            height: 22px; /* Taller switch */
+            margin-left: 12px; /* Increased margin */
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            -webkit-transition: .4s;
+            transition: .4s;
+            border-radius: 22px; /* Match switch height */
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px; /* Larger thumb */
+            width: 18px;
+            left: 2px;
+            bottom: 2px;
+            background-color: white;
+            -webkit-transition: .4s;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: #2196F3;
+        }
+
+        input:focus + .slider {
+            box-shadow: 0 0 1px #2196F3;
+        }
+
+        input:checked + .slider:before {
+            -webkit-transform: translateX(23px); /* Adjusted translate for wider switch */
+            -ms-transform: translateX(23px);
+            transform: translateX(23px);
+        }
+
+        /* New styles for Profile Sidebar */
+        .profile-sidebar {
+            height: 100%;
+            width: 0;
+            position: fixed;
+            z-index: 1002;
+            top: 0;
+            right: 0;
+            background-color: #fefefe;
+            overflow-x: hidden;
+            transition: 0.5s;
+            padding-top: 70px; /* Adjusted padding */
+            box-shadow: -3px 0 12px rgba(0,0,0,0.25); /* Larger shadow */
+            border-left: 1px solid #eee;
+            text-align: right;
+        }
+
+        .profile-sidebar.open {
+            width: 320px; /* Wider sidebar */
+        }
+
+        .profile-sidebar .close-button {
+            position: absolute;
+            top: 15px; /* Adjusted position */
+            left: 20px; /* Adjusted position */
+            right: auto;
+            font-size: 38px; /* Larger close button */
+            margin-right: 0;
+            color: #777;
+        }
+
+        .profile-sidebar h2 {
+            padding: 10px 10px 10px 35px; /* Adjusted padding */
+            text-decoration: none;
+            font-size: 28px; /* Larger font size */
+            color: #333;
+            display: block;
+            margin-bottom: 25px; /* Increased margin */
+            text-align: right;
+            padding-right: 25px; /* Increased padding */
+        }
+
+        .profile-content {
+            padding: 0 25px; /* Increased padding */
+        }
+
+        .profile-avatar-section {
+            display: flex;
+            align-items: center;
+            margin-bottom: 25px; /* Increased margin */
+            border-bottom: 1px solid #eee;
+            padding-bottom: 20px; /* Increased padding */
+        }
+
+        .profile-avatar {
+            width: 70px; /* Larger avatar */
+            height: 70px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin-left: 18px; /* Increased margin */
+            border: 3px solid #007bff; /* Thicker border */
+            flex-shrink: 0;
+        }
+
+        .profile-username {
+            font-size: 1.4em; /* Larger font */
+            font-weight: bold;
+            color: #333;
+            flex-grow: 1;
+            text-align: right;
+        }
+
+        .profile-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 12px; /* Increased gap */
+        }
+
+        .profile-button {
+            background-color: #f2f2f2;
+            color: #333;
+            border: 1px solid #ddd;
+            padding: 15px 18px; /* Increased padding */
+            border-radius: 10px; /* Slightly larger radius */
+            cursor: pointer;
+            font-size: 1.05em; /* Slightly larger font */
+            text-align: right;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 12px; /* Increased gap */
+            transition: background-color 0.3s ease, transform 0.2s ease;
+        }
+
+        .profile-button:hover {
+            background-color: #e0e0e0;
+            transform: translateY(-2px); /* Increased hover effect */
+        }
+
+        .profile-button svg {
+            fill: #555;
+            width: 25px; /* Larger icon */
+            height: 25px;
+            flex-shrink: 0;
+        }
+
+        /* New styles for Edit Profile Modal - "Sweet Honey" Colors */
+        .edit-profile-modal .modal-content {
+            max-width: 550px; /* Wider modal */
+            padding: 30px; /* Increased padding */
+            /* Sweet Honey Gradient */
+            background: linear-gradient(to bottom right, #FFC107, #FFD54F); /* Golden to light amber */
+            border: 1px solid #FFAB00; /* Darker golden border */
+            box-shadow: 0 8px 25px rgba(0,0,0,0.25); /* More prominent shadow */
+        }
+
+        .edit-profile-modal .modal-content h2 {
+            font-size: 1.8em; /* Larger font */
+            color: #795548; /* Brownish tone for heading */
+            border-bottom: 1px solid rgba(255,255,255,0.5); /* Lighter border for contrast */
+            padding-bottom: 12px; /* Increased padding */
+            margin-bottom: 30px; /* Increased margin */
+        }
+
+        /* Avatar and buttons in edit profile modal */
+        .edit-avatar-container {
+            position: relative;
+            width: 120px; /* Larger container for avatar */
+            height: 120px;
+            margin: 0 auto 30px auto; /* Centered with increased bottom margin */
+        }
+
+        .edit-profile-avatar {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid #E65100; /* Darker orange/amber border for contrast */
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1); /* Added shadow */
+        }
+
+        .avatar-action-buttons {
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 8px; /* Space between buttons */
+            background-color: rgba(255, 255, 255, 0.9); /* Semi-transparent background */
+            border-radius: 15px; /* Rounded background */
+            padding: 5px 10px; /* Padding for buttons */
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        .avatar-action-btn {
+            background-color: #FFF8E1; /* Very light yellow/cream */
+            border: none;
+            border-radius: 50%;
+            width: 30px; /* Size of action buttons */
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: background-color 0.2s ease, transform 0.2s ease;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+        }
+
+        .avatar-action-btn:hover {
+            background-color: #FFE082; /* Lighter amber on hover */
+            transform: translateY(-1px);
+        }
+
+        .avatar-action-btn svg {
+            width: 16px; /* Icon size */
+            height: 16px;
+            fill: #795548; /* Brownish tone for icons */
+        }
+
+        .avatar-action-btn.delete svg {
+            fill: #D32F2F; /* Darker red for delete icon */
+        }
+        .avatar-action-btn.change svg {
+            fill: #F57C00; /* Darker orange for change icon */
+        }
+
+        .edit-profile-options {
+            display: flex;
+            flex-direction: column;
+            gap: 15px; /* Increased gap */
+            padding: 0 12px; /* Increased padding */
+        }
+
+        .edit-profile-option-button {
+            background-color: #FFFDE7; /* Off-white / light cream for buttons */
+            color: #795548; /* Brownish text color */
+            border: 1px solid #FFECB3; /* Lighter amber border */
+            padding: 15px 20px; /* Increased padding */
+            border-radius: 10px; /* Slightly larger radius */
+            cursor: pointer;
+            font-size: 1.1em; /* Larger font size */
+            text-align: right;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 12px; /* Increased gap */
+            transition: background-color 0.3s ease, box-shadow 0.2s ease;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.07); /* Larger shadow */
+        }
+
+        .edit-profile-option-button:hover {
+            background-color: #FFECB3; /* Lighter amber on hover */
+            box-shadow: 0 5px 10px rgba(0,0,0,0.12); /* Larger shadow on hover */
+        }
+
+        .edit-profile-option-button svg {
+            fill: #A1887F; /* Softer brown for icons */
+            width: 26px; /* Larger icon */
+            height: 26px;
+            flex-shrink: 0;
+        }
+
+        /* Specific colors for some buttons if desired */
+        .edit-profile-option-button.red-text {
+            color: #D32F2F; /* Darker red for text */
+        }
+        .edit-profile-option-button.red-text svg {
+            fill: #D32F2F; /* Darker red for icon */
+        }
+
+        /* ===== New styles for Private Chat Modal ===== */
+        .private-chat-modal .modal-content {
+            max-width: 600px; /* Adjust width as needed */
+            height: 80%; /* Take up more height */
+            display: flex;
+            flex-direction: column;
+            background: linear-gradient(to top right, #F0F8FF, #E0FFFF); /* Light blue gradient */
+            border: 1px solid #B0E0E6; /* Light blue border */
+            box-shadow: 0 8px 25px rgba(0,0,0,0.25);
+        }
+
+        .private-chat-modal .modal-content h2 {
+            color: #2F8886; /* Dark teal color for heading */
+            border-bottom: 1px solid rgba(176, 224, 230, 0.5);
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+        }
+
+        .private-chat-sections {
+            display: flex;
+            flex-grow: 1; /* Allow sections to take available space */
+            border-top: 1px solid #B0E0E6;
+        }
+
+        .private-chat-users-list {
+            flex: 1; /* Takes 1/3 of the space */
+            border-left: 1px solid #B0E0E6;
+            overflow-y: auto;
+            padding: 10px;
+            background-color: #EBF7FA; /* Slightly different background for list */
+        }
+
+        .private-chat-current-conversation {
+            flex: 2; /* Takes 2/3 of the space */
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: #555;
+            font-size: 1.1em;
+            text-align: center;
+        }
+
+        #privateChatUsersList {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        #privateChatUsersList li {
+            display: flex;
+            align-items: center;
+            padding: 10px 15px;
+            border-bottom: 1px solid #E0FFFF;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+
+        #privateChatUsersList li:hover {
+            background-color: #D1EEF5; /* Lighter blue on hover */
+        }
+
+        #privateChatUsersList li:last-child {
+            border-bottom: none;
+        }
+
+        #privateChatUsersList li .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin-left: 10px;
+            border: 1px solid #A6DCEF;
+        }
+
+        #privateChatUsersList li .user-name {
+            font-weight: bold;
+            color: #333;
+            flex-grow: 1;
+        }
+        #privateChatUsersList li .user-name .premium-badge {
+             font-size: 0.7em;
+             padding: 2px 5px;
+             border-radius: 7px;
+             margin-right: 4px;
+             white-space: nowrap;
+        }
+
+        .no-private-chat-selected {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+
+        .conversation-area {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 15px;
+            background-color: #f8fcff;
+            border-bottom: 1px solid #E0FFFF;
+        }
+
+        .private-chat-input-area {
+            display: flex;
+            padding: 10px 15px;
+            border-top: 1px solid #B0E0E6;
+            background-color: #F5FAFD;
+        }
+
+        .private-chat-input {
+            flex-grow: 1;
+            padding: 8px 12px;
+            border: 1px solid #A6DCEF;
+            border-radius: 20px;
+            margin-left: 10px;
+            font-size: 0.95em;
+        }
+
+        .private-chat-send-button {
+            background-color: #2196F3; /* Blue send button */
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.95em;
+            transition: background-color 0.3s ease;
+        }
+
+        .private-chat-send-button:hover {
+            background-color: #1976D2;
+        }
+    </style>
+</head>
+<body>
+    <div class="top-navbar">
+        <div class="navbar-buttons">
+            <button class="navbar-button green-gradient" id="dashboardBtn" aria-label="القائمة">
+                <svg viewBox="0 0 24 24"><path fill="currentColor" d="M10 20v-6h4v6h5v-8h3L12 3L2 12h3v8z"/></svg>
+                القائمة
+            </button>
+            <button class="navbar-button blue-gradient" id="myProfileBtn" aria-label="ملفي الشخصي">
+                <svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                ملفي
+            </button>
+            <button class="navbar-button green-gradient" id="soundsBtn" aria-label="إعدادات الأصوات">
+                <svg viewBox="0 0 24 24"><path fill="currentColor" d="M14 3.23V5.29C16.89 6.15 19 8.83 19 12c0 3.17-2.11 5.85-5 6.71v2.06c4.07-.94 7-4.44 7-8.77c0-4.33-2.93-7.83-7-8.77zM16.5 12c0-1.77-1.02-3.29-2.5-4.03V16.03c1.48-.74 2.5-2.26 2.5-4.03zM3 9v6h4l5 5V4L7 9H3z"/></svg>
+                الأصوات
+            </button>
+            <button class="navbar-button purple-gradient" id="friendsBtn" aria-label="صداقة">
+                <svg viewBox="0 0 24 24"><path fill="currentColor" d="M16 17c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2m-6 0c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2m6-10v2h-4V7h4m-6 0v2H4V7h4m6 4v2h-4v-2h4m-6 0v2H4v-2h4M19 19H5v-2c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2v2m-6-4h4v-2h-4v2m-6-4h4V7H7v2z"/></svg>
+                صداقة
+            </button>
+            <button class="navbar-button purple-gradient" id="privateChatBtn" aria-label="دردشة خاصة">
+                <svg viewBox="0 0 24 24"><path fill="currentColor" d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2m0 14H6l-2 2V4h16v12z"/></svg>
+                خاصة
+            </button>
+            <button class="navbar-button orange-gradient" id="notificationsBtn" aria-label="الإشعارات">
+                <svg viewBox="0 0 24 24"><path fill="currentColor" d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+                اشعار <span id="notificationCount" style="margin-right: 5px; background-color: red; color: white; border-radius: 50%; padding: 3px 6px; font-size: 0.8em;">3</span>
+            </button>
+            <button class="navbar-button orange-gradient" id="connectedUsersBtn" aria-label="المستخدمون المتصلون">
+                <svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg> المتصلين
+            </button>
+        </div>
+    </div>
+
+    <div class="app-wrapper">
+        <div class="chat-messages">
+            </div>
+        </div>
+
+    <div class="chat-input-area">
+        <input type="text" class="chat-input" placeholder="اكتب رسالتك هنا...">
+        <button class="send-button">إرسال</button>
+    </div>
+
+    <div id="usernameModal" class="modal">
+        <div class="modal-content">
+            <h2>أهلاً بك!</h2>
+            <p>الرجاء إدخال اسم المستخدم الخاص بك:</p>
+            <input type="text" id="usernameInput" placeholder="اسم المستخدم">
+            <button id="saveUsernameBtn">حفظ</button>
+        </div>
+    </div>
+
+    <div id="usersSidebar" class="users-sidebar">
+        <span class="close-button" onclick="document.getElementById('usersSidebar').classList.remove('open');" aria-label="إغلاق قائمة المستخدمين">&times;</span>
+        <h2>المستخدمون المتصلون</h2>
+        <ul id="onlineUsersList">
+        </ul>
+    </div>
+
+    <div id="profileSidebar" class="profile-sidebar">
+        <span class="close-button" onclick="document.getElementById('profileSidebar').classList.remove('open');" aria-label="إغلاق الملف الشخصي">&times;</span>
+        <h2>ملفي الشخصي</h2>
+        <div class="profile-content">
+            <div class="profile-avatar-section">
+                <img id="profileAvatar" src="https://via.placeholder.com/70" alt="صورة الملف الشخصي" class="profile-avatar">
+                <span id="profileUsernameDisplay" class="profile-username">المستخدم الحالي</span>
+            </div>
+            <div class="profile-buttons">
+                <button class="profile-button" id="walletBtn">
+                    المحفظة
+                    <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M21 18V6c0-1.1-.9-2-2-2H5c-1.11 0-2 .9-2 2v12c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2zm-9-2h-2V8h2v8zm4 0h-2V8h2v8zm-8 0H6V8h2v8z"/></svg>
+                </button>
+                <button class="profile-button" id="levelInfoBtn">
+                    معلومات المستوى
+                    <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12c5.16-1.26 9-6.45 9-12V5l-9-4zm-1 6h2v2h-2zm0 4h2v6h-2z"/></svg>
+                </button>
+                <button class="profile-button" id="editProfileOptionsBtn">
+                    تعديل الملف الشخصي
+                    <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83l3.75 3.75 1.83-1.83z"/></svg>
+                </button>
+                <button class="profile-button" id="leaveRoomBtn">
+                    غادر الغرفة
+                    <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm5 11H7v-2h10v2z"/></svg>
+                </button>
+                <button class="profile-button" id="logoutBtn">
+                    خروج
+                    <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5l-5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/></svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="editProfileOptionsModal" class="modal edit-profile-modal">
+        <div class="modal-content">
+            <span class="close-button" onclick="document.getElementById('editProfileOptionsModal').style.display='none';" aria-label="إغلاق خيارات تعديل الملف الشخصي">&times;</span>
+            <h2>تعديل الملف الشخصي</h2>
+
+            <div class="edit-avatar-container">
+                <img id="editProfileAvatarDisplay" src="https://via.placeholder.com/120" alt="صورة البروفايل" class="edit-profile-avatar">
+                <div class="avatar-action-buttons">
+                    <button class="avatar-action-btn delete" id="deleteAvatarBtn" aria-label="حذف الصورة الشخصية">
+                        <svg viewBox="0 0 24 24"><path fill="currentColor" d="M19 6.41L17.59 5L12 10.59L6.41 5L5 6.41L10.59 12L5 17.59L6.41 19L12 13.41L17.59 19L19 17.59L13.41 12L19 6.41z"/></svg>
+                    </button>
+                    <button class="avatar-action-btn change" id="changeAvatarBtn" aria-label="تغيير الصورة الشخصية">
+                        <svg viewBox="0 0 24 24"><path fill="currentColor" d="M20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83l3.75 3.75 1.83-1.83zM3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z"/></svg>
+                    </button>
+                </div>
+            </div>
+
+            <div class="edit-profile-options">
+                <button class="edit-profile-option-button" id="editDataBtn">
+                    تعديل البيانات
+                    <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M14.06 9.06L15 8.12l.94.94L14.06 9.06zM12 7h2v2h-2zM6 19h12v-2H6v2zm12-4c-.55 0-1 .45-1 1s.45 1 1 1 1-.45 1-1-.45-1-1-1zm-4-4v4h-4v-4h4zM8 8v8h8V8H8zm2 10c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zM12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm0-16c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6-2.69-6-6-6z"/></svg>
+                </button>
+                <button class="edit-profile-option-button" id="changeUsernameBtn">
+                    تغيير اسم المستخدم
+                    <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83l3.75 3.75 1.83-1.83z"/></svg>
+                </button>
+                <button class="edit-profile-option-button" id="editStatusBtn">
+                    تعديل الحالة
+                    <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5C2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3C19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+                </button>
+                <button class="edit-profile-option-button" id="changeNameColorBtn">
+                    لون اسم المستخدم
+                    <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M17 12c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zM17 20.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5zM6 17c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zM6 20.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5zM12 2C6.48 2 2 6.48 2 12v4.75c0 .41.34.75.75.75H13c.41 0 .75-.34.75-.75V12c0-2.76-2.24-5-5-5S3 9.24 3 12c0 2.22 1.45 4.12 3.51 4.88c.18-.55.33-.87.49-.96.79-.42 1.63-.44 2.25-.19.34.14.7.35 1.05.61.16-.09.31-.22.46-.36.42-.42 1.04-.65 1.7-.65 1.38 0 2.5 1.12 2.5 2.5 0 .66-.23 1.28-.65 1.7-.14.15-.27.3-.36.46.26.35.47.71.61 1.05.25.62.23 1.46-.19 2.25-.09.16-.41.31-.96.49 0 0 .75.75.75.75H22c.55 0 1 .45 1 1s-.45 1-1 1h-2v1c0 1.1.9 2 2 2h2c1.1 0 2-.9 2-2v-1h2c.55 0 1-.45 1-1s-.45-1-1-1h-2V13c0-1.1-.9-2-2-2h-2c-1.1 0-2 .9-2 2v2c0-1.1-.9-2-2-2h-2v-2c0-1.1-.9-2-2-2h-2c-1.1 0-2 .9-2 2zm2 5h-4c0-.55.45-1 1-1h2c.55 0 1 .45 1 1z"/></svg>
+                </button>
+                <button class="edit-profile-option-button" id="changeFontColorBtn">
+                    لون الخط
+                    <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-2-12h4c1.1 0 2 .9 2 2v6c0 1.1-.9 2-2 2h-4c-1.1 0-2-.9-2-2v-6c0-1.1.9-2 2-2zm0 2v6h4v-6h-4z"/></svg>
+                </button>
+                <button class="edit-profile-option-button" id="editSoundsBtn">
+                    الأصوات
+                    <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M14 3.23V5.29C16.89 6.15 19 8.83 19 12c0 3.17-2.11 5.85-5 6.71v2.06c4.07-.94 7-4.44 7-8.77c0-4.33-2.93-7.83-7-8.77zM16.5 12c0-1.77-1.02-3.29-2.5-4.03V16.03c1.48-.74 2.5-2.26 2.5-4.03zM3 9v6h4l5 5V4L7 9H3z"/></svg>
+                </button>
+                <button class="edit-profile-option-button red-text" id="deleteAccountBtn">
+                    حذف الحساب
+                    <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zm2.46-7.12l1.41-1.41L12 12.59l2.12-2.12 1.41 1.41L13.41 14l2.12 2.12-1.41 1.41L12 15.41l-2.12 2.12-1.41-1.41L10.59 14l-2.13-2.12zM15.5 4l-1-1h-5l-1 1H5v2h14V4h-3.5z"/></svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="soundsModal" class="modal">
+        <div class="modal-content">
+            <span class="close-button" onclick="document.getElementById('soundsModal').style.display='none';" aria-label="إغلاق إعدادات الأصوات">&times;</span>
+            <h2>إعدادات الأصوات</h2>
+            <div class="sound-option">
+                <label for="masterVolume">التحكم بالصوت العام:</label>
+                <input type="range" id="masterVolume" min="0" max="1" step="0.01" value="1">
+            </div>
+            <div class="sound-option">
+                <label for="incomingMessageVolume">صوت الرسائل الواردة:</label>
+                <input type="range" id="incomingMessageVolume" min="0" max="1" step="0.01" value="1">
+            </div>
+            <div class="sound-option">
+                <label for="outgoingMessageVolume">صوت الرسائل الصادرة:</label>
+                <input type="range" id="outgoingMessageVolume" min="0" max="1" step="0.01" value="1">
+            </div>
+            <div class="sound-option">
+                <label for="notificationSound">صوت الإشعارات:</label>
+                <input type="range" id="notificationSound" min="0" max="1" step="0.01" value="1">
+            </div>
+            <div class="sound-option">
+                <label for="muteAllSounds">كتم كل الأصوات:</label>
+                <label class="switch">
+                    <input type="checkbox" id="muteAllSounds">
+                    <span class="slider"></span>
+                </label>
+            </div>
+        </div>
+    </div>
+
+    <div id="privateChatModal" class="modal private-chat-modal">
+        <div class="modal-content">
+            <span class="close-button" onclick="document.getElementById('privateChatModal').style.display='none';" aria-label="إغلاق الدردشة الخاصة">&times;</span>
+            <h2>الدردشة الخاصة</h2>
+            <div class="private-chat-sections">
+                <div class="private-chat-users-list">
+                    <h3>المستخدمون المتاحون</h3>
+                    <ul id="privateChatUsersList">
+                        </ul>
+                </div>
+                <div class="private-chat-current-conversation">
+                    <p class="no-private-chat-selected">
+                        <svg viewBox="0 0 24 24" width="48" height="48" fill="#B0C4DE" style="margin-bottom: 10px;"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2m0 14H6l-2 2V4h16v12z"/></svg><br>
+                        اختر مستخدماً لبدء دردشة خاصة.
+                    </p>
+                    <div id="activePrivateChat" style="display: none; width: 100%; height: 100%; flex-direction: column;">
+                         <div class="conversation-header" style="display: flex; align-items: center; justify-content: flex-end; padding-bottom: 10px; border-bottom: 1px solid #B0E0E6; margin-bottom: 10px;">
+                            <span id="privateChatTargetUsername" style="font-weight: bold; font-size: 1.2em; margin-left: 10px; color: #333;"></span>
+                            <img id="privateChatTargetAvatar" src="https://via.placeholder.com/40" alt="Avatar" class="user-avatar" style="width: 40px; height: 40px; border: 1px solid #A6DCEF;">
+                        </div>
+                        <div class="conversation-area" id="conversationArea">
+                            </div>
+                        <div class="private-chat-input-area">
+                            <input type="text" class="private-chat-input" id="currentPrivateMessageInput" placeholder="اكتب رسالتك الخاصة...">
+                            <button class="private-chat-send-button" id="sendPrivateMessageBtn">إرسال</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <input type="file" id="avatarUploadInput" accept="image/*" style="display: none;">
+
+    <script type="module">
+        // Import the functions you need from the SDKs you need
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";
+        // تأكد من استيراد `update` من Firebase Database
+        import { getDatabase, ref, push, onChildAdded, set, onDisconnect, get, child, onValue, onChildChanged, onChildRemoved, update } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-database.js";
+
+        // Your web app's Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyAbISM6qh9DHAyBTqWWhkVU-Nb09U4CAR4",
+            authDomain: "chat-sada-love.firebaseapp.com",
+            databaseURL: "https://chat-sada-love-default-rtdb.firebaseio.com",
+            projectId: "chat-sada-love",
+            storageBucket: "chat-sada-love.firebasestorage.app",
+            messagingSenderId: "979333283298",
+            appId: "1:979333283298:web:fcc5bea24b193c69e98dbb"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
+        const messagesRef = ref(database, 'messages');
+        const usersRef = ref(database, 'users');
+        // New reference for private chats
+        const privateChatsRef = ref(database, 'private_chats');
+
+
+        // Cloudinary Configuration - القيم المحدثة هنا
+        const CLOUDINARY_CLOUD_NAME = 'dim8zh0fh';
+        const CLOUDINARY_UPLOAD_PRESET = 'chat_app_profile_pics';
+
+
+        // Get references to elements
+        const chatMessages = document.querySelector('.chat-messages');
+        const chatInput = document.querySelector('.chat-input');
+        const sendButton = document.querySelector('.send-button');
+        const usernameModal = document.getElementById('usernameModal');
+        const usernameInput = document.getElementById('usernameInput');
+        const saveUsernameBtn = document.getElementById('saveUsernameBtn');
+        const connectedUsersBtn = document.getElementById('connectedUsersBtn');
+        const usersSidebar = document.getElementById('usersSidebar');
+        const onlineUsersList = document.getElementById('onlineUsersList');
+        const myProfileBtn = document.getElementById('myProfileBtn');
+        const profileSidebar = document.getElementById('profileSidebar');
+        const editProfileOptionsBtn = document.getElementById('editProfileOptionsBtn');
+        const editProfileOptionsModal = document.getElementById('editProfileOptionsModal');
+        const soundsBtn = document.getElementById('soundsBtn');
+        const soundsModal = document.getElementById('soundsModal');
+
+        // عناصر جديدة للصور في مودال التعديل
+        const editProfileAvatarDisplay = document.getElementById('editProfileAvatarDisplay'); // الصورة المعروضة في مودال التعديل
+        const deleteAvatarBtn = document.getElementById('deleteAvatarBtn'); // زر حذف الصورة
+        const changeAvatarBtn = document.getElementById('changeAvatarBtn'); // زر تغيير الصورة (نفس الـ ID ولكن الآن يعمل على الـ modal)
+        const avatarUploadInput = document.getElementById('avatarUploadInput'); // input file مخفي
+
+        // عناصر البروفايل الرئيسية (للشريط الجانبي)
+        const profileAvatar = document.getElementById('profileAvatar');
+        const profileUsernameDisplay = document.getElementById('profileUsernameDisplay');
+
+        // أزرار لوحة التحكم
+        const dashboardBtn = document.getElementById('dashboardBtn');
+        const friendsBtn = document.getElementById('friendsBtn');
+        const privateChatBtn = document.getElementById('privateChatBtn');
+        const notificationsBtn = document.getElementById('notificationsBtn');
+
+        // أزرار تعديل الملف الشخصي (داخل مودال التعديل)
+        const editDataBtn = document.getElementById('editDataBtn');
+        const changeUsernameBtnModal = document.getElementById('changeUsernameBtn'); // Rename to avoid conflict with existing 'changeUsernameBtn'
+        const editStatusBtn = document.getElementById('editStatusBtn');
+        const changeNameColorBtn = document.getElementById('changeNameColorBtn');
+        const changeFontColorBtn = document.getElementById('changeFontColorBtn');
+        const deleteAccountBtn = document.getElementById('deleteAccountBtn');
+
+        // Private Chat Modal Elements
+        const privateChatModal = document.getElementById('privateChatModal');
+        const privateChatUsersList = document.getElementById('privateChatUsersList');
+        const noPrivateChatSelected = document.querySelector('.no-private-chat-selected');
+        const activePrivateChat = document.getElementById('activePrivateChat');
+        const privateChatTargetUsername = document.getElementById('privateChatTargetUsername');
+        const privateChatTargetAvatar = document.getElementById('privateChatTargetAvatar');
+        const conversationArea = document.getElementById('conversationArea');
+        const currentPrivateMessageInput = document.getElementById('currentPrivateMessageInput');
+        const sendPrivateMessageBtn = document.getElementById('sendPrivateMessageBtn');
+
+
+        let currentUserName = localStorage.getItem('chatUserName');
+        let currentUserId = localStorage.getItem('chatUserId');
+        // الصورة الافتراضية، أو الصورة المحفوظة في localStorage
+        let userAvatar = localStorage.getItem('chatUserAvatar') || 'https://via.placeholder.com/70';
+
+        let currentPrivateChatTargetId = null; // To store the ID of the user we are currently chatting with
+        let currentPrivateChatTargetUsername = null; // To store the username of the user we are currently chatting with
+
+        // Audio elements for sounds
+        const audioIncoming = new Audio();
+        const audioOutgoing = new Audio();
+        const audioMention = new Audio(); // New audio for mentions
+        const audioNotification = new Audio();
+
+        // Load sound settings from localStorage
+        function loadSoundSettings() {
+            const masterVolume = document.getElementById('masterVolume');
+            const incomingMessageVolume = document.getElementById('incomingMessageVolume');
+            const outgoingMessageVolume = document.getElementById('outgoingMessageVolume');
+            const notificationSound = document.getElementById('notificationSound');
+            const muteAllSounds = document.getElementById('muteAllSounds');
+
+            masterVolume.value = parseFloat(localStorage.getItem('masterVolume')) || 1;
+            incomingMessageVolume.value = parseFloat(localStorage.getItem('incomingMessageVolume')) || 1;
+            outgoingMessageVolume.value = parseFloat(localStorage.getItem('outgoingMessageVolume')) || 1;
+            notificationSound.value = parseFloat(localStorage.getItem('notificationSound')) || 1;
+            muteAllSounds.checked = localStorage.getItem('muteAllSounds') === 'true';
+
+            updateAudioVolumes();
+            muteAllSounds.dispatchEvent(new Event('change')); // Apply mute setting initially
+        }
+
+        // Update audio volumes based on sliders
+        function updateAudioVolumes() {
+            const masterVolume = document.getElementById('masterVolume');
+            const incomingMessageVolume = document.getElementById('incomingMessageVolume');
+            const outgoingMessageVolume = document.getElementById('outgoingMessageVolume');
+            const notificationSound = document.getElementById('notificationSound');
+
+            const master = parseFloat(masterVolume.value);
+            audioIncoming.volume = parseFloat(incomingMessageVolume.value) * master;
+            audioOutgoing.volume = parseFloat(outgoingMessageVolume.value) * master;
+            audioMention.volume = parseFloat(notificationSound.value) * master; // Using notification sound for mentions
+            audioNotification.volume = parseFloat(notificationSound.value) * master;
+        }
+
+        // Play sound functions
+        function playIncomingSound() {
+            const muteAllSounds = document.getElementById('muteAllSounds');
+            if (!muteAllSounds.checked) {
+                audioIncoming.src = 'notification.mp3'; // Replace with actual path
+                audioIncoming.play().catch(e => console.error("Error playing incoming sound:", e));
+            }
+        }
+
+        function playOutgoingSound() {
+            const muteAllSounds = document.getElementById('muteAllSounds');
+            if (!muteAllSounds.checked) {
+                audioOutgoing.src = 'notification.mp3'; // Replace with actual path
+                audioOutgoing.play().catch(e => console.error("Error playing outgoing sound:", e));
+            }
+        }
+
+        function playMentionSound() {
+            const muteAllSounds = document.getElementById('muteAllSounds');
+            if (!muteAllSounds.checked) {
+                audioMention.src = 'mention.mp3'; // Replace with actual path
+                audioMention.play().catch(e => console.error("Error playing mention sound:", e));
+            }
+        }
+
+        function playNotificationSound() {
+            const muteAllSounds = document.getElementById('muteAllSounds');
+            if (!muteAllSounds.checked) {
+                audioNotification.src = 'notification.mp3'; // Replace with actual path
+                audioNotification.play().catch(e => console.error("Error playing notification sound:", e));
+            }
+        }
+
+        // Function to add a message to the chat display
+        function displayMessage(text, timestamp, sender, type = 'user', senderAvatar = 'https://via.placeholder.com/70', targetArea = chatMessages) {
+            const messageElement = document.createElement('div');
+            messageElement.classList.add('message');
+
+            const date = new Date(timestamp);
+            const timeString = date.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
+
+            // رسائل النظام والانضمام بتصميم خاص
+            if (type === 'system') {
+                if (text.includes("انضم للغرفة") || text.includes("منورين يا أعضاء الشات") || text.includes("دخل الغرفة") || text.includes("غادر الغرفة")) {
+                    messageElement.classList.add('joined');
+                }
+                messageElement.classList.add('system');
+                // لا نستخدم message-header أو message-content هنا، فقط نص مباشر ووقت
+                messageElement.innerHTML = `
+                    <p class="message-text">${text}</p>
+                    <span class="message-time">${timeString}</span>
+                `;
+            } else {
+                // الرسائل العادية (المستخدمين)
+                // يتم عرض الأفاتار والاسم في الأعلى
+                const messageHeader = document.createElement('div');
+                messageHeader.classList.add('message-header');
+
+                const avatarImg = document.createElement('img');
+                avatarImg.src = senderAvatar;
+                avatarImg.alt = sender;
+                avatarImg.classList.add('message-avatar');
+                messageHeader.appendChild(avatarImg);
+
+                const senderElement = document.createElement('span');
+                senderElement.classList.add('message-sender');
+                senderElement.textContent = sender;
+                messageHeader.appendChild(senderElement);
+
+                messageElement.appendChild(messageHeader);
+
+                // ثم فقاعة الرسالة (المحتوى والنص)
+                const messageContentDiv = document.createElement('div');
+                messageContentDiv.classList.add('message-content');
+
+                const textElement = document.createElement('p');
+                textElement.classList.add('message-text');
+                textElement.innerHTML = parseMentions(text);
+                messageContentDiv.appendChild(textElement);
+
+                messageElement.appendChild(messageContentDiv); // أضف الفقاعة الرئيسية
+
+                // ثم الوقت (أسفل الفقاعة)
+                const timeElement = document.createElement('span');
+                timeElement.classList.add('message-time');
+                timeElement.textContent = timeString;
+                messageElement.appendChild(timeElement);
+            }
+
+            targetArea.appendChild(messageElement);
+            targetArea.scrollTop = targetArea.scrollHeight; // Scroll to the bottom
+
+            // Play sound for incoming messages if not sent by current user and if it's the main chat
+            if (targetArea === chatMessages) {
+                if (type !== 'system' && sender !== currentUserName) {
+                    if (text.includes(`@${currentUserName}`)) {
+                        playMentionSound();
+                    } else {
+                        playIncomingSound();
+                    }
+                } else if (sender === currentUserName) {
+                    playOutgoingSound();
+                }
+            }
+        }
+
+
+        // Function to parse mentions
+        function parseMentions(message) {
+            return message.replace(/@(\S+)/g, (match, username) => {
+                // Check if the mentioned user is currently online or a registered user
+                const userExists = onlineUsers.some(u => u.username === username);
+                if (userExists) {
+                    return `<span class="mention">@${username}</span>`;
+                }
+                return match; // If user not found, return as is
+            });
+        }
+
+        // Function to handle sending message (main chat)
+        sendButton.addEventListener('click', async () => {
+            const messageText = chatInput.value.trim();
+            if (messageText && currentUserName && currentUserId) {
+                // جلب صورة المستخدم الحالي قبل إرسال الرسالة
+                const userSnap = await get(ref(database, 'users/' + currentUserId));
+                const currentUserAvatar = userSnap.exists() ? userSnap.val().avatar || 'https://via.placeholder.com/70' : 'https://via.placeholder.com/70';
+
+                const messageData = {
+                    sender: currentUserName,
+                    text: messageText,
+                    timestamp: new Date().toISOString(), // Use ISO string for consistent sorting
+                    userId: currentUserId,
+                    type: 'user', // Indicate it's a regular user message
+                    avatar: currentUserAvatar // إضافة avatar هنا
+                };
+                await push(messagesRef, messageData); // Send message to Firebase
+                chatInput.value = ''; // Clear input
+            } else {
+                alert('الرجاء إدخال اسم المستخدم أولاً.');
+                usernameModal.style.display = 'flex';
+            }
+        });
+
+        // Send message on Enter key press
+        chatInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                sendButton.click();
+            }
+        });
+
+        // =========================================================
+        // Firebase specific functions
+        // =========================================================
+
+        // Function to load initial messages from Firebase
+        async function loadInitialMessages() {
+            try {
+                const snapshot = await get(messagesRef);
+                if (snapshot.exists()) {
+                    chatMessages.innerHTML = ''; // Clear existing (dummy) messages before loading
+                    const messages = snapshot.val();
+                    const sortedMessageKeys = Object.keys(messages).sort((a, b) => {
+                        return messages[a].timestamp.localeCompare(messages[b].timestamp);
+                    });
+
+                    sortedMessageKeys.forEach(key => {
+                        const messageData = messages[key];
+                        displayMessage(messageData.text, messageData.timestamp, messageData.sender, messageData.type || 'user', messageData.avatar || 'https://via.placeholder.com/70', chatMessages); // إضافة avatar
+                    });
+                } else {
+                    console.log("No initial messages found in Firebase.");
+                }
+            } catch (error) {
+                console.error("Error loading initial messages:", error);
+            }
+        }
+
+        // Function to ensure a welcome message exists
+        async function ensureWelcomeMessage() {
+            const welcomeMessageId = "welcome_message_id"; // A fixed ID for the welcome message
+            const welcomeMessageRef = child(messagesRef, welcomeMessageId);
+
+            try {
+                const snapshot = await get(welcomeMessageRef);
+                if (!snapshot.exists()) {
+                    await set(welcomeMessageRef, {
+                        sender: "النظام",
+                        text: "منورين يا أعضاء الشات! نتمنى لكم وقتًا ممتعًا.",
+                        timestamp: new Date().toISOString(),
+                        type: "system"
+                    });
+                    console.log("Welcome message added to Firebase.");
+                }
+            } catch (error) {
+                console.error("Error ensuring welcome message:", error);
+            }
+        }
+
+        // Function to set up user presence (online/offline)
+        function setupUserPresence() {
+            const userStatusRef = ref(database, 'users/' + currentUserId);
+            const connectedRef = ref(database, '.info/connected');
+
+            onValue(connectedRef, (snapshot) => {
+                if (snapshot.val() === true) {
+                    // User is connected
+                    set(userStatusRef, { username: currentUserName, isOnline: true, lastSeen: new Date().toISOString(), avatar: userAvatar });
+                    onDisconnect(userStatusRef).set({ username: currentUserName, isOnline: false, lastSeen: new Date().toISOString(), avatar: userAvatar });
+                    console.log("User status set to online.");
+                } else {
+                    // User is disconnected (this runs if the connection drops or tab is closed)
+                    // The onDisconnect above handles this.
+                    console.log("User disconnected (handled by onDisconnect).");
+                }
+            });
+
+            // Listen for changes in other users' online status
+            onChildAdded(usersRef, (snapshot) => {
+                const userId = snapshot.key;
+                const userData = snapshot.val();
+                if (userId !== currentUserId) {
+                    updateOnlineUsersList(); // Call to refresh with current Firebase data
+                    populatePrivateChatUsersList(); // Update private chat list as well
+                }
+            });
+
+            onChildChanged(usersRef, (snapshot) => {
+                const userId = snapshot.key;
+                const userData = snapshot.val();
+                if (userId !== currentUserId) {
+                    updateOnlineUsersList(); // Call to refresh with current Firebase data
+                    populatePrivateChatUsersList(); // Update private chat list as well
+                }
+            });
+
+            onChildRemoved(usersRef, (snapshot) => {
+                const userId = snapshot.key;
+                // Remove user from the list
+                const listItem = document.getElementById(`user-${userId}`);
+                if (listItem) {
+                    listItem.remove();
+                }
+                updateOnlineUsersList(); // Call to refresh with current Firebase data
+                populatePrivateChatUsersList(); // Update private chat list as well
+            });
+        }
+
+
+        let onlineUsers = []; // Global variable to store online users for mention feature
+
+        // Function to update online users list in sidebar
+        function updateOnlineUsersList() {
+            get(usersRef).then(snapshot => {
+                onlineUsersList.innerHTML = ''; // Clear current list
+                onlineUsers = []; // Clear the global array
+                let hasUsers = false;
+
+                if (snapshot.exists()) {
+                    snapshot.forEach(childSnapshot => {
+                        const id = childSnapshot.key;
+                        const data = childSnapshot.val();
+
+                        if (id !== currentUserId) { // Exclude current user from the list
+                            onlineUsers.push({ id: id, username: data.username, isOnline: data.isOnline, avatar: data.avatar || 'https://via.placeholder.com/70', isPremium: data.isPremium || false }); // احفظ الصورة و حالة البريميوم
+                            hasUsers = true;
+                            const listItem = document.createElement('li');
+                            listItem.id = `user-${id}`; // Add ID for easy removal
+
+                            const avatarUrl = data.avatar || 'https://via.placeholder.com/45/CCCCCC/FFFFFF?text=JP'; // Replace with an actual default image path
+                            const isPremium = data.isPremium || false;
+
+                            listItem.innerHTML = `
+                                <img src="${avatarUrl}" alt="${data.username}" class="user-avatar">
+                                <div class="user-details">
+                                    <span class="user-name mentionable-user" data-userid="${id}" data-username="${data.username}">
+                                        ${isPremium ? `<span class="premium-badge"><svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2L9.19 8.63L2 9.24l5.46 4.73L5.82 21L12 17.27z"/></svg> بريميوم</span>` : ''}
+                                        ${data.username}
+                                    </span>
+                                    <span class="user-status">${data.isOnline ? 'متصل الآن' : 'غير متصل'}</span>
+                                </div>
+                            `;
+                            listItem.querySelector('.mentionable-user').addEventListener('click', function() {
+                                const usernameToMention = this.getAttribute('data-username');
+                                chatInput.value += `@${usernameToMention} `;
+                                chatInput.focus();
+                                usersSidebar.classList.remove('open');
+                            });
+                            onlineUsersList.appendChild(listItem);
+                        }
+                    });
+                }
+
+                if (!hasUsers) {
+                    onlineUsersList.innerHTML = '<li>لا يوجد مستخدمون متصلون حالياً غيرك.</li>';
+                }
+            }).catch(error => {
+                console.error("Error updating online users list:", error);
+                onlineUsersList.innerHTML = '<li>حدث خطأ في تحميل قائمة المستخدمين.</li>';
+            });
+        }
+
+        // Functions for Private Chat
+        // Function to populate the private chat users list
+        function populatePrivateChatUsersList() {
+            privateChatUsersList.innerHTML = '';
+            // Filter to show only online users
+            const availableUsers = onlineUsers.filter(user => user.isOnline);
+
+            if (availableUsers.length === 0) {
+                privateChatUsersList.innerHTML = '<li>لا يوجد مستخدمون متاحون للدردشة الخاصة.</li>';
+                return;
+            }
+
+            availableUsers.forEach(user => {
+                if (user.id === currentUserId) return; // Don't add self to private chat list
+
+                const listItem = document.createElement('li');
+                listItem.setAttribute('data-userid', user.id);
+                listItem.setAttribute('data-username', user.username);
+                listItem.setAttribute('data-avatar', user.avatar);
+
+                const avatarUrl = user.avatar || 'https://via.placeholder.com/40';
+                const isPremium = user.isPremium || false;
+
+                listItem.innerHTML = `
+                    <img src="${avatarUrl}" alt="${user.username}" class="user-avatar">
+                    <span class="user-name">
+                        ${isPremium ? `<span class="premium-badge"><svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2L9.19 8.63L2 9.24l5.46 4.73L5.82 21L12 17.27z"/></svg> بريميوم</span>` : ''}
+                        ${user.username}
+                    </span>
+                `;
+                listItem.addEventListener('click', () => startPrivateChat(user.id, user.username, user.avatar));
+                privateChatUsersList.appendChild(listItem);
+            });
+        }
+
+        // Function to start a private chat with a selected user
+        function startPrivateChat(targetUserId, targetUsername, targetAvatar) {
+            currentPrivateChatTargetId = targetUserId;
+            currentPrivateChatTargetUsername = targetUsername;
+
+            // Update display in conversation area
+            noPrivateChatSelected.style.display = 'none';
+            activePrivateChat.style.display = 'flex';
+            privateChatTargetUsername.textContent = targetUsername;
+            privateChatTargetAvatar.src = targetAvatar || 'https://via.placeholder.com/40';
+            conversationArea.innerHTML = ''; // Clear previous conversation
+
+            // Load existing private messages for this chat
+            loadPrivateMessages(currentUserId, targetUserId);
+
+            // Set up listener for new private messages in this chat
+            // Ensure to detach previous listener if changing target
+            if (window.currentPrivateChatListener) {
+                window.currentPrivateChatListener(); // Call the unsubscribe function
+            }
+            window.currentPrivateChatListener = listenForPrivateMessages(currentUserId, targetUserId);
+            currentPrivateMessageInput.focus();
+        }
+
+        // Function to load private messages
+        function loadPrivateMessages(user1Id, user2Id) {
+            const chatKey = getPrivateChatKey(user1Id, user2Id);
+            const chatMessagesRef = child(privateChatsRef, chatKey);
+
+            get(chatMessagesRef).then(snapshot => {
+                if (snapshot.exists()) {
+                    const messages = snapshot.val();
+                    const sortedMessageKeys = Object.keys(messages).sort((a, b) => {
+                        return messages[a].timestamp.localeCompare(messages[b].timestamp);
+                    });
+
+                    sortedMessageKeys.forEach(key => {
+                        const msg = messages[key];
+                        displayMessage(msg.text, msg.timestamp, msg.sender, 'user', msg.avatar, conversationArea);
+                    });
+                }
+            }).catch(error => console.error("Error loading private messages:", error));
+        }
+
+        // Function to listen for real-time private messages
+        function listenForPrivateMessages(user1Id, user2Id) {
+            const chatKey = getPrivateChatKey(user1Id, user2Id);
+            const chatMessagesRef = child(privateChatsRef, chatKey);
+
+            const unsubscribe = onChildAdded(chatMessagesRef, (snapshot) => {
+                const messageData = snapshot.val();
+                // Avoid re-displaying messages already loaded by loadPrivateMessages (simple check)
+                // A more robust check might be needed for high-volume chats
+                displayMessage(messageData.text, messageData.timestamp, messageData.sender, 'user', messageData.avatar, conversationArea);
+            });
+            return unsubscribe; // Return the unsubscribe function
+        }
+
+        // Helper to get consistent chat key for two users
+        function getPrivateChatKey(user1Id, user2Id) {
+            // Sort IDs to ensure consistent chat key regardless of who initiates
+            return user1Id < user2Id ? `${user1Id}_${user2Id}` : `${user2Id}_${user1Id}`;
+        }
+
+        // Function to send a private message
+        sendPrivateMessageBtn.addEventListener('click', async () => {
+            const messageText = currentPrivateMessageInput.value.trim();
+            if (messageText && currentUserId && currentPrivateChatTargetId) {
+                const chatKey = getPrivateChatKey(currentUserId, currentPrivateChatTargetId);
+                const userSnap = await get(ref(database, 'users/' + currentUserId));
+                const currentUserAvatar = userSnap.exists() ? userSnap.val().avatar || 'https://via.placeholder.com/70' : 'https://via.placeholder.com/70';
+
+                const messageData = {
+                    sender: currentUserName,
+                    text: messageText,
+                    timestamp: new Date().toISOString(),
+                    userId: currentUserId,
+                    avatar: currentUserAvatar,
+                };
+                await push(child(privateChatsRef, chatKey), messageData);
+                currentPrivateMessageInput.value = '';
+            }
+        });
+
+        currentPrivateMessageInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                sendPrivateMessageBtn.click();
+            }
+        });
+
+        // وظيفة لرفع الصورة إلى Cloudinary وتحديث ملف المستخدم في Firebase
+        async function uploadAvatar(file) {
+            if (!currentUserId) {
+                alert('لا يمكن تحميل الصورة. لم يتم تحديد معرف المستخدم.');
+                return;
+            }
+
+            if (!CLOUDINARY_CLOUD_NAME || !CLOUDINARY_UPLOAD_PRESET) {
+                alert('خطأ في إعدادات Cloudinary. يرجى التحقق من Cloud Name واسم قالب الرفع.');
+                console.error('Cloudinary configuration missing!');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+
+            const uploadURL = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`;
+
+            try {
+                console.log('بدء رفع الصورة إلى Cloudinary...');
+                const response = await fetch(uploadURL, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(`خطأ في رفع الصورة إلى Cloudinary: ${errorData.error.message || response.statusText}`);
+                }
+
+                const data = await response.json();
+                const downloadURL = data.secure_url; // رابط الصورة الآمن (HTTPS)
+
+                console.log('تم رفع الصورة إلى Cloudinary بنجاح. URL:', downloadURL);
+
+                // تحديث URL الصورة في Firebase Realtime Database
+                const userRef = ref(database, 'users/' + currentUserId);
+                await update(userRef, { avatar: downloadURL });
+
+                // تحديث localStorage والمتغير المحلي
+                localStorage.setItem('chatUserAvatar', downloadURL);
+                userAvatar = downloadURL;
+                if (profileAvatar) {
+                    profileAvatar.src = downloadURL; // تحديث الصورة في واجهة البروفايل الرئيسية
+                }
+                if (editProfileAvatarDisplay) {
+                    editProfileAvatarDisplay.src = downloadURL; // تحديث الصورة في مودال التعديل
+                }
+
+                alert('تم تغيير الصورة الشخصية بنجاح!');
+
+                // يمكنك إغلاق المودال بعد الرفع
+                editProfileOptionsModal.style.display = 'none';
+
+                // تحديث قائمة المستخدمين المتصلين لعرض الصورة الجديدة
+                updateOnlineUsersList();
+                populatePrivateChatUsersList(); // Update private chat list with new avatar
+
+            } catch (error) {
+                console.error("خطأ في رفع الصورة:", error);
+                alert('حدث خطأ أثناء رفع الصورة: ' + error.message);
+            }
+        }
+
+        // وظيفة لحذف الصورة الشخصية
+        async function deleteAvatar() {
+            if (!currentUserId) {
+                alert('لا يمكن حذف الصورة. لم يتم تحديد معرف المستخدم.');
+                return;
+            }
+
+            const confirmDelete = confirm('هل أنت متأكد من أنك تريد حذف صورتك الشخصية؟ ستعود إلى الصورة الافتراضية.');
+            if (!confirmDelete) {
+                return;
+            }
+
+            const defaultAvatar = 'https://via.placeholder.com/70'; // نفس الصورة الافتراضية
+
+            try {
+                // تحديث URL الصورة في Firebase إلى الافتراضي
+                const userRef = ref(database, 'users/' + currentUserId);
+                await update(userRef, { avatar: defaultAvatar });
+
+                // تحديث localStorage والمتغير المحلي
+                localStorage.setItem('chatUserAvatar', defaultAvatar);
+                userAvatar = defaultAvatar;
+                if (profileAvatar) {
+                    profileAvatar.src = defaultAvatar; // تحديث الصورة في واجهة البروفايل الرئيسية
+                }
+                if (editProfileAvatarDisplay) {
+                    editProfileAvatarDisplay.src = defaultAvatar; // تحديث الصورة في مودال التعديل
+                }
+                alert('تم حذف الصورة الشخصية بنجاح وتم تعيين الصورة الافتراضية.');
+                editProfileOptionsModal.style.display = 'none';
+                updateOnlineUsersList();
+                populatePrivateChatUsersList(); // Update private chat list with new avatar
+            } catch (error) {
+                console.error("خطأ في حذف الصورة:", error);
+                alert('حدث خطأ أثناء حذف الصورة: ' + error.message);
+            }
+        }
+
+
+        // =========================================================
+        // Application Initialization Logic
+        // =========================================================
+
+        // Function to initialize all chat components after getting username
+        function initializeChatApp() {
+            // تحديث عرض الصورة في الملف الشخصي عند التهيئة
+            if (profileAvatar) {
+                profileAvatar.src = userAvatar;
+            }
+            // تحديث عرض اسم المستخدم في الملف الشخصي
+            if (profileUsernameDisplay) {
+                profileUsernameDisplay.textContent = currentUserName;
+            }
+            // تحديث عرض الصورة في مودال تعديل الملف الشخصي
+            if (editProfileAvatarDisplay) {
+                editProfileAvatarDisplay.src = userAvatar;
+            }
+
+            // First, load existing messages from Firebase
+            loadInitialMessages().then(() => {
+                // Then, ensure welcome message (if it doesn't exist)
+                ensureWelcomeMessage();
+
+                // Set up real-time listener for new messages
+                onChildAdded(messagesRef, (snapshot) => {
+                    const messageData = snapshot.val();
+                    // Avoid re-displaying messages already loaded by loadInitialMessages
+                    displayMessage(messageData.text, messageData.timestamp, messageData.sender, messageData.type || 'user', messageData.avatar || 'https://via.placeholder.com/70', chatMessages);
+                });
+            });
+
+            loadSoundSettings();
+            setupUserPresence(); // Setup user online/offline status
+            updateOnlineUsersList(); // Initial fetch and display of online users
+            // No need to populate private chat users list here, it's called on privateChatBtn click
+        }
+
+        // Show username modal if not set
+        if (!currentUserName || !currentUserId) {
+            usernameModal.style.display = 'flex';
+        } else {
+            // If username is already set, initialize the app
+            initializeChatApp();
+        }
+
+        // Save username button handler
+        saveUsernameBtn.addEventListener('click', () => {
+            const username = usernameInput.value.trim();
+            if (username) {
+                currentUserName = username;
+                currentUserId = localStorage.getItem('chatUserId'); // حاول استرجاع ID موجود
+                if (!currentUserId) {
+                    currentUserId = 'user_' + Date.now(); // إذا لم يكن هناك ID، أنشئ واحدًا
+                    localStorage.setItem('chatUserId', currentUserId);
+                }
+
+                // تحديث صورة المستخدم في localStorage
+                userAvatar = localStorage.getItem('chatUserAvatar') || 'https://via.placeholder.com/70';
+                localStorage.setItem('chatUserName', currentUserName);
+
+                usernameModal.style.display = 'none'; // Hide modal
+                initializeChatApp(); // Start chat app
+            } else {
+                alert('الرجاء إدخال اسم مستخدم صالح.');
+            }
+        });
+
+        // Event listener for "Connected Users" button
+        connectedUsersBtn.addEventListener('click', () => {
+            usersSidebar.classList.add('open');
+            updateOnlineUsersList(); // Refresh the list every time button is clicked
+        });
+
+        // Event listener for "My Profile" button
+        myProfileBtn.addEventListener('click', () => {
+            document.getElementById('profileUsernameDisplay').textContent = currentUserName || 'غير معروف';
+            document.getElementById('profileAvatar').src = userAvatar;
+            profileSidebar.classList.add('open');
+        });
+
+        // Event listener for "Edit Profile Options" button
+        editProfileOptionsBtn.addEventListener('click', () => {
+            profileSidebar.classList.remove('open'); // Close profile sidebar
+            editProfileOptionsModal.style.display = 'flex'; // Show edit options modal
+            // تأكد من تحديث الصورة في مودال التعديل عند فتحه
+            if (editProfileAvatarDisplay) {
+                editProfileAvatarDisplay.src = userAvatar;
+            }
+        });
+
+        // Event listener for "Sounds" button
+        soundsBtn.addEventListener('click', () => {
+            soundsModal.style.display = 'flex'; // Show sounds modal
+        });
+
+        // Event listener for "Private Chat" button
+        privateChatBtn.addEventListener('click', () => {
+            populatePrivateChatUsersList(); // Populate the list of users for private chat
+            privateChatModal.style.display = 'flex'; // Show private chat modal
+            noPrivateChatSelected.style.display = 'block'; // Ensure placeholder is visible
+            activePrivateChat.style.display = 'none'; // Hide active chat area initially
+            // Detach previous listener if any
+            if (window.currentPrivateChatListener) {
+                window.currentPrivateChatListener();
+                window.currentPrivateChatListener = null;
+            }
+            currentPrivateChatTargetId = null; // Reset target
+            currentPrivateChatTargetUsername = null; // Reset target
+        });
+
+
+        // Close modal when clicking outside of it
+        window.addEventListener('click', (event) => {
+            if (event.target == soundsModal) {
+                soundsModal.style.display = 'none';
+            }
+            if (event.target == editProfileOptionsModal) {
+                editProfileOptionsModal.style.display = 'none';
+            }
+            if (event.target == usersSidebar) { // Allow closing sidebar by clicking outside
+                 usersSidebar.classList.remove('open');
+            }
+            if (event.target == profileSidebar) { // Allow closing profile sidebar by clicking outside
+                 profileSidebar.classList.remove('open');
+            }
+            if (event.target == privateChatModal) { // Allow closing private chat modal by clicking outside
+                privateChatModal.style.display = 'none';
+                if (window.currentPrivateChatListener) {
+                    window.currentPrivateChatListener(); // Unsubscribe from private chat messages
+                    window.currentPrivateChatListener = null;
+                }
+            }
+        });
+
+        // =========================================================
+        // تفعيل الأزرار المتبقية (Dummy functionality)
+        // =========================================================
+
+        dashboardBtn.addEventListener('click', () => alert('تم النقر على زر القائمة (لوحة التحكم).'));
+        friendsBtn.addEventListener('click', () => alert('تم النقر على زر الصداقة.'));
+        notificationsBtn.addEventListener('click', () => alert('تم النقر على زر الإشعارات.'));
+
+        document.getElementById('walletBtn').addEventListener('click', () => alert('تم النقر على المحفظة.'));
+        document.getElementById('levelInfoBtn').addEventListener('click', () => alert('تم النقر على معلومات المستوى.'));
+
+        // Dummy functionality for edit profile options
+        editDataBtn.addEventListener('click', () => alert('تم النقر على تعديل البيانات.'));
+        changeUsernameBtnModal.addEventListener('click', () => alert('تم النقر على تغيير اسم المستخدم.'));
+        editStatusBtn.addEventListener('click', () => alert('تم النقر على تعديل الحالة.'));
+        changeNameColorBtn.addEventListener('click', () => alert('تم النقر على لون اسم المستخدم.'));
+        changeFontColorBtn.addEventListener('click', () => alert('تم النقر على لون الخط.'));
+        deleteAccountBtn.addEventListener('click', () => alert('تم النقر على حذف الحساب. هذه وظيفة حساسة!'));
+
+
+        // Existing functional buttons
+        document.getElementById('leaveRoomBtn').addEventListener('click', () => alert('تم النقر على غادر الغرفة.'));
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+            localStorage.removeItem('chatUserName');
+            localStorage.removeItem('chatUserId');
+            localStorage.removeItem('chatUserAvatar');
+            window.location.reload(); // Refresh the page to reset the app
+        });
+
+        // Event listeners for avatar upload
+        changeAvatarBtn.addEventListener('click', () => {
+            avatarUploadInput.click(); // تشغيل input file عند النقر على الزر
+        });
+
+        // Event listener for deleting avatar
+        deleteAvatarBtn.addEventListener('click', () => {
+            deleteAvatar(); // Call the delete avatar function
+        });
+
+        avatarUploadInput.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (file) {
+                // يمكنك إضافة قيود على حجم الملف هنا (مثلاً 2MB)
+                if (file.size > 2 * 1024 * 1024) { // 2MB limit
+                    alert("حجم الصورة كبير جداً. الحد الأقصى هو 2 ميجابايت.");
+                    return;
+                }
+                uploadAvatar(file);
+            }
+        });
+
+
+        // Sound controls event listeners
+        const masterVolume = document.getElementById('masterVolume');
+        const incomingMessageVolume = document.getElementById('incomingMessageVolume');
+        const outgoingMessageVolume = document.getElementById('outgoingMessageVolume');
+        const notificationSound = document.getElementById('notificationSound');
+        const muteAllSounds = document.getElementById('muteAllSounds');
+
+        masterVolume.addEventListener('input', () => {
+            localStorage.setItem('masterVolume', masterVolume.value);
+            updateAudioVolumes();
+        });
+
+        incomingMessageVolume.addEventListener('input', () => {
+            localStorage.setItem('incomingMessageVolume', incomingMessageVolume.value);
+            updateAudioVolumes();
+        });
+
+        outgoingMessageVolume.addEventListener('input', () => {
+            localStorage.setItem('outgoingMessageVolume', outgoingMessageVolume.value);
+            updateAudioVolumes();
+        });
+
+        notificationSound.addEventListener('input', () => {
+            localStorage.setItem('notificationSound', notificationSound.value);
+            updateAudioVolumes();
+        });
+
+        muteAllSounds.addEventListener('change', () => {
+            const isMuted = muteAllSounds.checked;
+            audioIncoming.muted = isMuted;
+            audioOutgoing.muted = isMuted;
+            audioMention.muted = isMuted;
+            audioNotification.muted = isMuted;
+            localStorage.setItem('muteAllSounds', isMuted);
+        });
+
+    </script>
+</body>
+</html>
